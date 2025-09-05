@@ -4,16 +4,15 @@ export default async function handler(req, res) {
   
   const { type, id } = req.query;
   
-  console.log('Stream request:', { type, id });
-  
-  // Sample stream response - this should eventually come from Real-Debrid
+  // For now, return a sample stream response
+  // In production, this will connect to Real-Debrid API
   const streams = [{
-    title: "HD Stream",
-    name: "Direct Stream",
-    url: `https://real-debrid.com/d/${id}`, // This would be the actual Real-Debrid link
+    title: "Real-Debrid Stream",
+    name: "Direct Stream", 
+    url: `https://real-debrid.com/stream/${id}`, // This will be actual Real-Debrid link
     behaviorHints: {
       notWebReady: true, // Important for debrid services
-      bingeGroup: `ufc-${id}`
+      bingeGroup: `rd-${id}`
     }
   }];
   
