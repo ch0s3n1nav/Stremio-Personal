@@ -12,12 +12,6 @@
       "id": "ufc-events",
       "name": "UFC Events",
       "extra": [{ "name": "search", "isRequired": false }]
-    },
-    {
-      "type": "movie", 
-      "id": "debrid-content",
-      "name": "All Debrid Content",
-      "extra": [{ "name": "search", "isRequired": false }]
     }
   ],
   "background": "https://i.imgur.com/6ofFUPt.png",
