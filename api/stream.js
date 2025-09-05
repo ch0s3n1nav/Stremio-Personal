@@ -1,24 +1,32 @@
 export default async function handler(req, res) {
-  // Add these CORS headers at the top
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
   const { type, id } = req.query;
   
-  const streams = [{
-    title: "Real-Debrid Stream",
-    name: "Direct Stream", 
-    url: `https://real-debrid.com/stream/${id}`,
-    behaviorHints: {
-      notWebReady: true
+  try {
+    let streams = [];
+    
+    // For content from your debrid cloud (starts with rd_)
+    if (id && id.startsWith('rd_')) {
+      streams = [{
+        title: "Real-Debrid Cloud Stream",
+        name: "Debrid Cloud",
+        url: `https://real-debrid.com/stream/${id}`,
+        behaviorHints: {
+          notWebReady: true,
+          bingeGroup: `deb-${id}`
+        }
+      }];
     }
-  }];
-  
-  res.json({ streams });
+    
+    res.json({ streams });
+    
+  } catch (error) {
+    console.error('Stream error:', error);
+    res.json({ streams: [] });
+  }
 }
