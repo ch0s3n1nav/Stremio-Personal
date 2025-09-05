@@ -4,11 +4,17 @@ export default async function handler(req, res) {
   
   const { type, id } = req.query;
   
-  // Sample stream response
+  console.log('Stream request:', { type, id });
+  
+  // Sample stream response - this should eventually come from Real-Debrid
   const streams = [{
-    title: "UFC 291 Stream",
-    url: `https://real-debrid-stream.com/${id}`,
-    name: "HD Stream"
+    title: "HD Stream",
+    name: "Direct Stream",
+    url: `https://real-debrid.com/d/${id}`, // This would be the actual Real-Debrid link
+    behaviorHints: {
+      notWebReady: true, // Important for debrid services
+      bingeGroup: `ufc-${id}`
+    }
   }];
   
   res.json({ streams });
