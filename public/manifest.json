@@ -16,5 +16,7 @@
   ],
   "background": "https://i.imgur.com/6ofFUPt.png",
   "logo": "https://i.imgur.com/6ofFUPt.png",
-  "contactEmail": "support@lacuna-designs.co.uk"
+  "contactEmail": "support@lacuna-designs.co.uk",
+  "catalogHandler": "https://stremio-personal.vercel.app/api/catalog",
+  "streamHandler": "https://stremio-personal.vercel.app/api/stream"
 }
