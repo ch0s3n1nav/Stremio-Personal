@@ -1,0 +1,13 @@
+[build]
+  command = "npm install"
+  publish = "."
+
+[[redirects]]
+  from = "/*"
+  to = "/server.js"
+  status = 200
+
+[[redirects]]
+  from = "/manifest.json"
+  to = "/server.js"
+  status = 200
