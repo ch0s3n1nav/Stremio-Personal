@@ -9,8 +9,8 @@
   "catalogs": [
     {
       "type": "movie",
-      "id": "ufc-events",
-      "name": "UFC Events",
+      "id": "debrid-cloud",
+      "name": "My Debrid Cloud",
       "extra": [{ "name": "search", "isRequired": false }]
     }
   ],
