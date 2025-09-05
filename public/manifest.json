@@ -1,6 +1,6 @@
 {
   "id": "org.lacuna.realdebrid",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "name": "Nav's Real-Debrid Cloud",
   "description": "Access your Real-Debrid cloud content in Stremio",
   "resources": ["stream", "catalog"],
@@ -9,11 +9,19 @@
     {
       "type": "movie",
       "id": "debrid-cloud",
-      "name": "My Debrid Cloud"
+      "name": "My Debrid Cloud",
+      "extra": [
+        {
+          "name": "search",
+          "isRequired": false
+        }
+      ]
     }
   ],
   "idPrefixes": ["rd"],
   "background": "https://i.imgur.com/6ofFUPt.png",
   "logo": "https://i.imgur.com/6ofFUPt.png",
-  "contactEmail": "support@lacuna-designs.co.uk"
+  "contactEmail": "support@lacuna-designs.co.uk",
+  "catalogHandler": "https://stremio-personal.vercel.app/api/catalog",
+  "streamHandler": "https://stremio-personal.vercel.app/api/stream"
 }
