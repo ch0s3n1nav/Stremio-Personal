@@ -2,12 +2,14 @@
   command = "npm install"
   publish = "."
 
-[[redirects]]
-  from = "/*"
-  to = "/server.js"
-  status = 200
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
 
 [[redirects]]
-  from = "/manifest.json"
+  from = "/*"
   to = "/server.js"
   status = 200
