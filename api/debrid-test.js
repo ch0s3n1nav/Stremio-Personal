@@ -6,48 +6,74 @@ export default async function handler(req, res) {
   
   try {
     if (action === 'test') {
-      // Test without API key first
-      const testResponse = {
-        status: "ready_for_api_key",
-        message: "API endpoint is ready. Add your Real-Debrid API key to test actual connectivity.",
+      return res.json({
+        status: "ready",
+        message: "Real-Debrid API endpoint is operational",
         timestamp: new Date().toISOString()
-      };
-      return res.json(testResponse);
+      });
     }
 
-    // For now, simulate Real-Debrid response
-    // Replace this with actual API call once we confirm the endpoint works
+    // Get API key from request header or query parameter
+    const apiKey = req.headers.authorization?.replace('Bearer ', '') || req.query.apiKey;
     
-    const simulatedResponse = {
-      status: "success",
-      message: "Simulated Real-Debrid response",
-      data: {
-        files: [
-          {
-            id: "rd_ufc291",
-            filename: "UFC.291.Poirier.vs.Gaethje.2.2023.1080p.WEB.H264.mp4",
-            filesize: 4523561234,
-            created: "2023-07-30T14:32:10Z"
-          },
-          {
-            id: "rd_ufc290", 
-            filename: "UFC.290.Volkanovski.vs.Rodriguez.2023.1080p.WEB.H264.mp4",
-            filesize: 4123456789,
-            created: "2023-07-09T10:15:30Z"
-          }
-        ],
-        total_count: 2,
-        simulated: true
-      }
-    };
+    if (!apiKey) {
+      return res.json({
+        status: "error",
+        message: "API key required. Add ?apiKey=YOUR_KEY to the URL",
+        timestamp: new Date().toISOString()
+      });
+    }
 
-    res.json(simulatedResponse);
+    // REAL API CALL to get torrents from Real-Debrid
+    const response = await fetch('https://api.real-debrid.com/rest/1.0/torrents', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Real-Debrid API error: ${response.status} ${response.statusText}`);
+    }
+
+    const torrents = await response.json();
+
+    // Filter and format for Stremio
+    const stremioFiles = torrents
+      .filter(torrent => torrent.status === 'downloaded')
+      .map(torrent => ({
+        id: `rd_${torrent.id}`,
+        type: "movie",
+        name: torrent.filename,
+        poster: "https://image.tmdb.org/t/p/w500/ujSGUZQpyrv2jqKWaPdMrL2MNmM.jpg", // Default UFC poster
+        description: `Size: ${formatBytes(torrent.bytes)} | Added: ${new Date(torrent.added).toLocaleDateString()}`,
+        releaseInfo: new Date(torrent.added).getFullYear().toString(),
+        runtime: "120 min"
+      }));
+
+    res.json({
+      status: "success",
+      data: {
+        files: stremioFiles,
+        total_count: stremioFiles.length,
+        source: "real-debrid-api"
+      }
+    });
 
   } catch (error) {
+    console.error('Real-Debrid API error:', error);
     res.json({
       status: "error",
       message: error.message,
       timestamp: new Date().toISOString()
     });
   }
+}
+
+// Helper function to format file size
+function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
 }
