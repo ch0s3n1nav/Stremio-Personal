@@ -6,17 +6,7 @@
   "logo": "https://lacuna-designs.co.uk/navs_real-debrid_cloud/logo.png",
   "resources": [
     {
-      "name": "stream",
-      "types": ["movie", "series"],
-      "idPrefixes": ["rd_"]
-    },
-    {
       "name": "catalog",
-      "types": ["movie", "series"],
-      "idPrefixes": ["rd_ufc", "rd_all"]
-    },
-    {
-      "name": "meta",
       "types": ["movie", "series"],
       "idPrefixes": ["rd_"]
     }
@@ -25,23 +15,23 @@
   "catalogs": [
     {
       "type": "movie",
-      "id": "rd_ufc",
-      "name": "UFC Content (Real-Debrid)"
-    },
-    {
-      "type": "series",
-      "id": "rd_ufc",
-      "name": "UFC Content (Real-Debrid)"
+      "id": "debrid-cloud",
+      "name": "All Cloud (Real-Debrid)"
     },
     {
       "type": "movie",
-      "id": "rd_all",
-      "name": "All Cloud (Real-Debrid)"
+      "id": "ufc-events",
+      "name": "UFC Content (Real-Debrid)"
     },
     {
       "type": "series",
-      "id": "rd_all",
-      "name": "All Cloud (Real-Debrid)"
+      "id": "debrid-cloud",
+      "name": "All Cloud Series (Real-Debrid)"
+    },
+    {
+      "type": "series",
+      "id": "ufc-events",
+      "name": "UFC Series (Real-Debrid)"
     }
   ],
   "idPrefixes": ["rd_"]
