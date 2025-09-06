@@ -2,11 +2,10 @@ const { REAL_DEBRID_API_KEY } = process.env;
 
 module.exports = async (req, res) => {
   try {
-    if (!REAL_DEBRID_API_KEY) {
-      throw new Error('Real-Debrid API key is not configured');
-    }
-
-    // For series, return empty for now
+    // For series, we'll return an empty array since Real-Debrid doesn't 
+    // differentiate between movie and series in their API
+    // You might need to implement your own logic to detect series
+    
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({ metas: [] });
