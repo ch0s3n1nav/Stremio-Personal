@@ -1,7 +1,4 @@
 {
-  "env": {
-    "REAL_DEBRID_API_KEY": "@your_vercel_env_var_name"
-  },
   "functions": {
     "api/*.js": {
       "maxDuration": 30
@@ -18,4 +15,3 @@
     }
   ]
 }
- 
