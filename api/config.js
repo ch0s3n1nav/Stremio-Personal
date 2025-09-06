@@ -1,4 +1,4 @@
-// Simple in-memory config storage (in production, use a database)
+// Simple in-memory config storage
 let userConfig = {
   apiKey: null,
   configured: false
@@ -12,4 +12,4 @@ export function setConfig(newConfig) {
   userConfig = { ...userConfig, ...newConfig };
   userConfig.configured = !!userConfig.apiKey;
   return userConfig;
-} 
+}
