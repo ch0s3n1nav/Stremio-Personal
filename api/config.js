@@ -12,4 +12,4 @@ export function setConfig(newConfig) {
   userConfig = { ...userConfig, ...newConfig };
   userConfig.configured = !!userConfig.apiKey;
   return userConfig;
-}
+} 
