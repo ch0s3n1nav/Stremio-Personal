@@ -31,6 +31,8 @@ module.exports = async (req, res) => {
 
     const torrents = await response.json();
     
+    console.log(`Found ${torrents.length} torrents from Real-Debrid API`);
+    
     // Filter for only ready torrents and convert to Stremio format
     const metas = torrents
       .filter(torrent => torrent.status === 'downloaded')
@@ -59,6 +61,7 @@ module.exports = async (req, res) => {
         };
       });
 
+    console.log(`Returning ${metas.length} ready torrents`);
     res.json({ metas });
   } catch (error) {
     console.error('Error in debrid-cloud catalog:', error);
