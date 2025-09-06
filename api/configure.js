@@ -3,13 +3,29 @@ const { REAL_DEBRID_API_KEY } = process.env;
 module.exports = async (req, res) => {
   try {
     // Test the API connection
-    const testResponse = await fetch('https://api.real-debrid.com/rest/1.0/torrents', {
-      headers: {
-        'Authorization': `Bearer ${REAL_DEBRID_API_KEY}`
-      }
-    });
+    let apiStatus = 'unknown';
+    let torrentCount = 0;
+    
+    if (REAL_DEBRID_API_KEY) {
+      try {
+        const testResponse = await fetch('https://api.real-debrid.com/rest/1.0/torrents', {
+          headers: {
+            'Authorization': `Bearer ${REAL_DEBRID_API_KEY}`
+          }
+        });
 
-    const apiStatus = testResponse.ok ? 'connected' : 'error';
+        if (testResponse.ok) {
+          const torrents = await testResponse.json();
+          apiStatus = 'connected';
+          torrentCount = torrents.length;
+        } else {
+          apiStatus = 'error';
+        }
+      } catch (apiError) {
+        apiStatus = 'error';
+        console.error('API test error:', apiError);
+      }
+    }
     
     const html = `
       <!DOCTYPE html>
@@ -37,6 +53,7 @@ module.exports = async (req, res) => {
         
         <div class="status ${apiStatus === 'connected' ? 'success' : 'error'}">
           API Connection: ${apiStatus === 'connected' ? 'Successful' : 'Failed - Check your API key'}
+          ${apiStatus === 'connected' ? `<br>Found ${torrentCount} torrents in your cloud` : ''}
         </div>
         
         <div class="status info">
@@ -47,6 +64,7 @@ module.exports = async (req, res) => {
 
         <div class="test-links">
           <h2>Test Links:</h2>
+          <a href="/manifest.json">Manifest</a>
           <a href="/catalog/movie/debrid-cloud.json">All Cloud Movies</a>
           <a href="/catalog/movie/ufc-events.json">UFC Movies</a>
           <a href="/catalog/series/debrid-cloud.json">All Cloud Series</a>
@@ -72,7 +90,7 @@ module.exports = async (req, res) => {
       <body>
         <h1>Real-Debrid Plugin Configuration</h1>
         <div class="error">
-          <p>Error testing API connection: ${error.message}</p>
+          <p>Error: ${error.message}</p>
         </div>
       </body>
       </html>
