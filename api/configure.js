@@ -21,6 +21,13 @@ module.exports = (req, res) => {
       }
       <p>This plugin provides access to your Real-Debrid cloud files in Stremio.</p>
       <p>You don't need to configure anything here. The plugin will automatically show your UFC content and all cloud files.</p>
+      <h2>Test Links:</h2>
+      <ul>
+        <li><a href="/catalog/movie/debrid-cloud.json">All Cloud Movies</a></li>
+        <li><a href="/catalog/movie/ufc-events.json">UFC Movies</a></li>
+        <li><a href="/catalog/series/debrid-cloud.json">All Cloud Series</a></li>
+        <li><a href="/catalog/series/ufc-events.json">UFC Series</a></li>
+      </ul>
     </body>
     </html>
   `;
