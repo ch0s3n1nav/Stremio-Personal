@@ -1,17 +1,50 @@
 {
-  "functions": {
-    "api/*.js": {
-      "maxDuration": 30
-    }
-  },
-  "headers": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
-      ]
+      "src": "api/manifest.json",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/configure.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/stream/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/catalog/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/meta/*.js",
+      "use": "@vercel/node"
     }
-  ]
+  ],
+  "routes": [
+    {
+      "src": "/manifest.json",
+      "dest": "/api/manifest.json"
+    },
+    {
+      "src": "/configure",
+      "dest": "/api/configure.js"
+    },
+    {
+      "src": "/stream/:type/:id",
+      "dest": "/api/stream/[type]/[id].js"
+    },
+    {
+      "src": "/catalog/:type/:id",
+      "dest": "/api/catalog/[type]/[id].js"
+    },
+    {
+      "src": "/meta/:type/:id",
+      "dest": "/api/meta/[type]/[id].js"
+    }
+  ],
+  "env": {
+    "REAL_DEBRID_API_KEY": "@real_debrid_api_key"
+  }
 }
