@@ -1,26 +1,48 @@
 {
-  "id": "org.lacuna.realdebrid",
+  "id": "com.stremio.realdebrid.plugin",
   "version": "1.0.0",
-  "name": "Nav's Real-Debrid Cloud",
-  "description": "Access your UFC events and debrid cloud content",
-  "resources": ["stream", "catalog"],
+  "name": "Real-Debrid Cloud",
+  "description": "Access your Real-Debrid cloud files in Stremio",
+  "logo": "https://lacuna-designs.co.uk/navs_real-debrid_cloud/logo.png",
+  "resources": [
+    {
+      "name": "stream",
+      "types": ["movie", "series"],
+      "idPrefixes": ["rd_"]
+    },
+    {
+      "name": "catalog",
+      "types": ["movie", "series"],
+      "idPrefixes": ["rd_ufc", "rd_all"]
+    },
+    {
+      "name": "meta",
+      "types": ["movie", "series"],
+      "idPrefixes": ["rd_"]
+    }
+  ],
   "types": ["movie", "series"],
   "catalogs": [
     {
       "type": "movie",
-      "id": "ufc-events",
-      "name": "UFC Events",
-      "extra": [{"name": "search", "isRequired": false}]
+      "id": "rd_ufc",
+      "name": "UFC Content (Real-Debrid)"
+    },
+    {
+      "type": "series",
+      "id": "rd_ufc",
+      "name": "UFC Content (Real-Debrid)"
     },
     {
       "type": "movie",
-      "id": "debrid-cloud", 
-      "name": "My Debrid Cloud",
-      "extra": [{"name": "search", "isRequired": false}]
+      "id": "rd_all",
+      "name": "All Cloud (Real-Debrid)"
+    },
+    {
+      "type": "series",
+      "id": "rd_all",
+      "name": "All Cloud (Real-Debrid)"
     }
   ],
-  "idPrefixes": ["rd"],
-  "background": "https://i.imgur.com/6ofFUPt.png",
-  "logo": "https://i.imgur.com/6ofFUPt.png",
-  "contactEmail": "support@lacuna-designs.co.uk"
+  "idPrefixes": ["rd_"]
 }
