@@ -1,40 +1,30 @@
-import { setConfig, getConfig } from './config.js';
+const { REAL_DEBRID_API_KEY } = process.env;
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'application/json');
-
-  if (req.method === 'POST') {
-    const { apiKey } = req.body;
-    
-    if (!apiKey) {
-      return res.json({ status: "error", message: "API key is required" });
-    }
-
-    try {
-      // Test the API key
-      const testResponse = await fetch('https://api.real-debrid.com/rest/1.0/user', {
-        headers: { 'Authorization': `Bearer ${apiKey}` }
-      });
-
-      if (testResponse.status === 401) {
-        return res.json({ status: "error", message: "Invalid API key" });
+module.exports = (req, res) => {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Real-Debrid Plugin Configuration</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+      </style>
+    </head>
+    <body>
+      <h1>Real-Debrid Plugin Configuration</h1>
+      ${REAL_DEBRID_API_KEY ? 
+        `<div class="status success">API Key is configured successfully!</div>` : 
+        `<div class="status error">API Key is missing. Please set REAL_DEBRID_API_KEY environment variable in Vercel.</div>`
       }
-
-      // Save the valid API key
-      setConfig({ apiKey });
-      
-      res.json({ status: "success", message: "API key configured successfully!" });
-
-    } catch (error) {
-      res.json({ status: "error", message: error.message });
-    }
-
-  } else if (req.method === 'GET') {
-    // Return current configuration
-    const config = getConfig();
-    res.json(config);
-  } else {
-    res.status(405).json({ error: "Method not allowed" });
-  }
-}
+      <p>This plugin provides access to your Real-Debrid cloud files in Stremio.</p>
+      <p>You don't need to configure anything here. The plugin will automatically show your UFC content and all cloud files.</p>
+    </body>
+    </html>
+  `;
+  
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+};
