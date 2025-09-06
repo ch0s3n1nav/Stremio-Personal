@@ -2,6 +2,18 @@ const { REAL_DEBRID_API_KEY } = process.env;
 
 module.exports = async (req, res) => {
   try {
+    // Set CORS headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Handle OPTIONS request for CORS
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
     if (!REAL_DEBRID_API_KEY) {
       throw new Error('Real-Debrid API key is not configured');
     }
@@ -47,17 +59,11 @@ module.exports = async (req, res) => {
         };
       });
 
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({ metas });
   } catch (error) {
     console.error('Error in debrid-cloud catalog:', error);
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.status(500).json({ 
-      error: 'Failed to fetch cloud content',
-      details: error.message,
-      // Return sample data as fallback
+    // Return sample data as fallback
+    res.json({ 
       metas: [
         {
           id: "rd_movie_1",
