@@ -10,15 +10,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/stream/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/catalog/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/meta/*.js",
+      "src": "api/catalog/**/*.js",
       "use": "@vercel/node"
     }
   ],
@@ -32,16 +24,20 @@
       "dest": "/api/configure.js"
     },
     {
-      "src": "/stream/:type/:id",
-      "dest": "/api/stream/[type]/[id].js"
+      "src": "/catalog/movie/debrid-cloud.json",
+      "dest": "/api/catalog/movie/debrid-cloud.json.js"
     },
     {
-      "src": "/catalog/:type/:id",
-      "dest": "/api/catalog/[type]/[id].js"
+      "src": "/catalog/movie/ufc-events.json",
+      "dest": "/api/catalog/movie/ufc-events.json.js"
     },
     {
-      "src": "/meta/:type/:id",
-      "dest": "/api/meta/[type]/[id].js"
+      "src": "/catalog/series/debrid-cloud.json",
+      "dest": "/api/catalog/series/debrid-cloud.json.js"
+    },
+    {
+      "src": "/catalog/series/ufc-events.json",
+      "dest": "/api/catalog/series/ufc-events.json.js"
     }
   ],
   "env": {
