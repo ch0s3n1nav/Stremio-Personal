@@ -2,6 +2,18 @@ const { REAL_DEBRID_API_KEY } = process.env;
 
 module.exports = async (req, res) => {
   try {
+    // Set CORS headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Handle OPTIONS request for CORS
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
     if (!REAL_DEBRID_API_KEY) {
       throw new Error('Real-Debrid API key is not configured');
     }
@@ -22,9 +34,9 @@ module.exports = async (req, res) => {
     // Filter for UFC content and ready torrents
     const ufcTorrents = torrents.filter(torrent => 
       torrent.status === 'downloaded' && (
-        torrent.filename.toLowerCase().includes('ufc') || 
-        torrent.original_filename.toLowerCase().includes('ufc') ||
-        (torrent.filename + torrent.original_filename).toLowerCase().includes('mma')
+        (torrent.filename && torrent.filename.toLowerCase().includes('ufc')) || 
+        (torrent.original_filename && torrent.original_filename.toLowerCase().includes('ufc')) ||
+        ((torrent.filename + ' ' + torrent.original_filename).toLowerCase().includes('mma'))
       )
     );
     
@@ -57,17 +69,11 @@ module.exports = async (req, res) => {
       };
     });
 
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
     res.json({ metas });
   } catch (error) {
     console.error('Error in UFC events catalog:', error);
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.status(500).json({ 
-      error: 'Failed to fetch UFC content',
-      details: error.message,
-      // Return sample UFC data as fallback
+    // Return sample UFC data as fallback
+    res.json({ 
       metas: [
         {
           id: "rd_ufc_1",
