@@ -2,15 +2,15 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/manifest.json",
+      "src": "api/*.json",
       "use": "@vercel/static"
     },
     {
-      "src": "api/configure.js",
+      "src": "api/*.js",
       "use": "@vercel/node"
     },
     {
-      "src": "api/catalog/**/*.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
