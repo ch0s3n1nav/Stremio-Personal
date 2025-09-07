@@ -20,6 +20,14 @@
     {
       "src": "api/stream/**/*.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/test-player.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/utils/**/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -46,19 +54,14 @@
     {
       "src": "/stream/movie/(.*).json",
       "dest": "/api/stream/movie/[id].js?id=$1"
+    },
+    {
+      "src": "/test-player",
+      "dest": "/api/test-player.js"
     }
   ],
   "env": {
     "REAL_DEBRID_API_KEY": "VYESHZI4D3BF3DLJ6W4242ZTCCSR3RVSFWTGKTVRTOQ223LDRI6A",
     "TMDB_API_KEY": "your_tmdb_api_key_here"
   }
-}
-{
-  "routes": [
-    // ... keep your existing routes ...
-    {
-      "src": "/test-player",
-      "dest": "/api/test-player.js"
-    }
-  ]
 }
