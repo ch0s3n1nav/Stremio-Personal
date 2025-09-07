@@ -53,3 +53,12 @@
     "TMDB_API_KEY": "your_tmdb_api_key_here"
   }
 }
+{
+  "routes": [
+    // ... keep your existing routes ...
+    {
+      "src": "/test-player",
+      "dest": "/api/test-player.js"
+    }
+  ]
+}
