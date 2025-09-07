@@ -12,6 +12,14 @@
     {
       "src": "api/catalog/**/*.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/meta/**/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/stream/**/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -30,6 +38,14 @@
     {
       "src": "/catalog/movie/ufc-events.json",
       "dest": "/api/catalog/movie/ufc-events.js"
+    },
+    {
+      "src": "/meta/movie/:id.json",
+      "dest": "/api/meta/movie/[id].js"
+    },
+    {
+      "src": "/stream/movie/:id.json",
+      "dest": "/api/stream/movie/[id].js"
     }
   ],
   "env": {
