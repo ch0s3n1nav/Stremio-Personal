@@ -21,54 +21,79 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'ID parameter is required' });
     }
 
-    // Extract title from ID for display
-    const titleFromId = id.replace(/^rd_(movie|ufc)_/, '').replace(/_/g, ' ');
-    let title = decodeURIComponent(titleFromId);
+    // Extract the filename from the ID (same as meta handler)
+    const parts = id.split('_');
+    let filename = '';
     
-    if (title.length === 32 || title.length === 40 || /^[0-9a-f]+$/i.test(title)) {
-      title = 'Real-Debrid Content';
+    if (parts.length >= 4) {
+      filename = parts.slice(3).join('_');
+      filename = decodeURIComponent(filename);
+    } else {
+      filename = id.replace(/^rd_(movie|ufc)_/, '').replace(/_/g, ' ');
+      filename = decodeURIComponent(filename);
     }
 
-    // For now, create a dummy stream response
-    // In production, you'd fetch the actual Real-Debrid stream URL
+    let displayTitle = filename
+      .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
+      .replace(/\./g, ' ')
+      .replace(/_/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // For Real-Debrid streaming, we need to get the actual stream URL
+    // This is a simplified version - you might need to implement proper Real-Debrid API calls
+    const torrentId = parts[2]; // The torrent ID from the ID string
+    
+    let streamUrl = '';
+    
+    if (REAL_DEBRID_API_KEY && torrentId) {
+      try {
+        // Fetch torrent info to get download links
+        const response = await fetch(`https://api.real-debrid.com/rest/1.0/torrents/info/${torrentId}`, {
+          headers: {
+            'Authorization': `Bearer ${REAL_DEBRID_API_KEY}`
+          }
+        });
+
+        if (response.ok) {
+          const torrentInfo = await response.json();
+          if (torrentInfo.links && torrentInfo.links.length > 0) {
+            // Use the first available link
+            streamUrl = torrentInfo.links[0];
+          }
+        }
+      } catch (apiError) {
+        console.error('Error fetching from Real-Debrid API:', apiError);
+      }
+    }
+
+    // If we couldn't get a real URL, create a dummy one
+    if (!streamUrl) {
+      streamUrl = `https://dav.real-debrid.com/${encodeURIComponent(filename)}`;
+    }
+
     const streams = [
       {
-        title: title || 'Real-Debrid Stream',
-        name: 'Real-Debrid', // This appears in the player UI
-        // For Real-Debrid, we need to provide a URL that Stremio can handle
-        // This might need to be a proxy URL or direct link with auth
-        url: `https://dav.real-debrid.com/${encodeURIComponent(title)}.mp4`,
-        
-        // Important: Stremio needs to know how to handle this stream
+        title: displayTitle,
+        name: 'Real-Debrid Stream',
+        url: streamUrl,
         behaviorHints: {
-          notWebReady: false, // Set to true if it needs special handling
+          notWebReady: true, // Real-Debrid links need special handling
           proxyHeaders: {
             request: {
               Authorization: `Bearer ${REAL_DEBRID_API_KEY}`
             }
           },
-          // Additional hints for Stremio
-          bingeGroup: `real-debrid-${id}`,
-          externalPlayer: {
-            name: 'Real-Debrid',
-            supported: true
-          }
+          bingeGroup: `real-debrid-${id}`
         },
-        
-        // Stream metadata
-        type: 'movie',
-        hash: id,
-        quality: '1080p',
-        size: 1024 * 1024 * 1500, // Approximate size in bytes (1.5GB)
-        // Add more stream info as needed
+        type: 'movie'
       }
     ];
 
-    console.log('Returning stream for ID:', id);
-    res.json({ streams: streams }); // Note: { streams: [...] } format
+    console.log('Returning stream for:', displayTitle);
+    res.json({ streams: streams });
   } catch (error) {
     console.error('Error in stream handler:', error);
-    // Return empty streams array instead of error
     res.json({ streams: [] });
   }
 };
