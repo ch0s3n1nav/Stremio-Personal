@@ -59,6 +59,10 @@
       "src": "/test-player",
       "dest": "/api/test-player.js"
     }
+    {
+  "src": "/test-image",
+  "dest": "/api/test-image.js"
+    }
   ],
   "env": {
     "REAL_DEBRID_API_KEY": "VYESHZI4D3BF3DLJ6W4242ZTCCSR3RVSFWTGKTVRTOQ223LDRI6A",
