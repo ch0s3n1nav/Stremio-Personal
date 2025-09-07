@@ -1,16 +1,8 @@
 const { REAL_DEBRID_API_KEY } = process.env;
 
-// Use a try-catch for the require to prevent breaking the handler
-let ufcImageFinder;
-try {
-  ufcImageFinder = require('../utils/ufcImageFinder');
-} catch (error) {
-  console.warn('UFC image finder not available, using fallback images');
-  ufcImageFinder = {
-    findUfcEventImage: (title) => `https://img.real-debrid.com/?text=${encodeURIComponent(title)}&width=300&height=450`,
-    getUfcBackgroundImage: () => `https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000`
-  };
-}
+// UFC images
+const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
+const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
 
 module.exports = async (req, res) => {
   try {
@@ -45,8 +37,12 @@ module.exports = async (req, res) => {
       originalFilename = decodeURIComponent(originalFilename);
     }
 
-    // Check if this is UFC content
+    // DEBUG: Check what the ID starts with
+    console.log('ID starts with:', id.substring(0, 10));
+    
+    // Check if this is UFC content - BETTER DETECTION
     const isUfc = id.startsWith('rd_ufc_');
+    console.log('Is UFC content:', isUfc, 'Full ID:', id);
     
     // Create display title
     let displayTitle = originalFilename
@@ -55,20 +51,22 @@ module.exports = async (req, res) => {
       .replace(/_/g, ' ')
       .trim();
 
-    // Get appropriate image
+    // Get appropriate image - FORCE UFC LOGO FOR TESTING
     let poster, background;
     
     if (isUfc) {
       // Use UFC-specific images
-      poster = ufcImageFinder.findUfcEventImage(displayTitle);
-      background = ufcImageFinder.getUfcBackgroundImage(displayTitle);
+      poster = ufcLogo;
+      background = ufcBackground;
+      console.log('USING UFC LOGO:', ufcLogo);
     } else {
       // Use generic images for non-UFC content
       poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
       background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
+      console.log('Using text image for non-UFC content');
     }
 
-    // Create proper meta response
+    // Create proper meta response with debug info
     const meta = {
       id: id,
       type: 'movie',
@@ -80,6 +78,12 @@ module.exports = async (req, res) => {
       genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'],
       runtime: '120 min',
       year: new Date().getFullYear().toString(),
+      // Debug info
+      _debug: {
+        isUfc: isUfc,
+        idPrefix: id.substring(0, 10),
+        originalFilename: originalFilename
+      },
       videos: [
         {
           id: id + '_video',
@@ -90,7 +94,7 @@ module.exports = async (req, res) => {
       ]
     };
 
-    console.log('Returning meta for title:', displayTitle, 'UFC:', isUfc);
+    console.log('Returning meta. UFC:', isUfc, 'Poster:', poster);
     res.json({ meta: meta });
   } catch (error) {
     console.error('Error in meta handler:', error);
