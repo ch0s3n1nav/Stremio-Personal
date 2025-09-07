@@ -26,17 +26,21 @@ module.exports = async (req, res) => {
       return res.json({ error: 'API key not configured', streams: [] });
     }
 
-    // Extract torrent ID from the ID
+    // Extract torrent ID from the ID - handle alphanumeric IDs
     const parts = id.split('_');
-    const torrentId = parts[2]; // Third part is the torrent ID
     
-    if (!torrentId || isNaN(torrentId)) {
-      console.error('Could not extract valid torrent ID from:', id);
-      return res.json({ error: 'Invalid torrent ID', streams: [] });
+    // The ID format is: rd_movie_ABC123_filename.mkv
+    // So parts[0] = "rd", parts[1] = "movie", parts[2] = torrent ID, parts[3+] = filename
+    if (parts.length < 3) {
+      console.error('Invalid ID format:', id);
+      return res.json({ error: 'Invalid ID format', streams: [] });
     }
 
-    console.log('Fetching torrent info for ID:', torrentId);
+    const torrentId = parts[2]; // This is the alphanumeric ID like "2Y7CCQC6ZKX3C"
     
+    console.log('Extracted torrent ID:', torrentId);
+    console.log('Full ID parts:', parts);
+
     // Fetch torrent info from Real-Debrid API
     const torrentResponse = await fetch(`https://api.real-debrid.com/rest/1.0/torrents/info/${torrentId}`, {
       headers: {
@@ -54,7 +58,7 @@ module.exports = async (req, res) => {
     }
 
     const torrentInfo = await torrentResponse.json();
-    console.log('Torrent info:', JSON.stringify(torrentInfo, null, 2));
+    console.log('Torrent info received successfully');
     
     if (!torrentInfo.links || torrentInfo.links.length === 0) {
       console.error('No download links found for torrent');
@@ -91,7 +95,7 @@ module.exports = async (req, res) => {
     }
 
     const unrestrictInfo = await unrestrictResponse.json();
-    console.log('Unrestrict info:', JSON.stringify(unrestrictInfo, null, 2));
+    console.log('Unrestrict info received successfully');
     
     if (!unrestrictInfo.download) {
       console.error('No direct download URL from unrestrict');
