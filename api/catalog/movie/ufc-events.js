@@ -40,111 +40,20 @@ module.exports = async (req, res) => {
     
     console.log(`Found ${torrents.length} torrents from Real-Debrid API`);
     
-    // Improved UFC filtering - be more specific to catch only UFC content
+    // Filter for UFC content using the EXACT filename from Real-Debrid
     const ufcTorrents = torrents.filter(torrent => {
       if (torrent.status !== 'downloaded') return false;
       
       const filename = (torrent.filename || '').toLowerCase();
       const originalFilename = (torrent.original_filename || '').toLowerCase();
-      const combined = filename + ' ' + originalFilename;
       
-      // Specific UFC patterns (must include UFC or Ultimate Fighting Championship)
-      const ufcPatterns = [
-        'ufc',
-        'ultimate fighting championship',
-        'ufc fight night',
-        'ufc prelims',
-        'ufc main event',
-        'ufc ppv',
-        'ufc event'
-      ];
+      // Check if filename contains UFC patterns
+      const hasUfc = filename.includes('ufc') || originalFilename.includes('ufc');
       
-      // Check if it contains specific UFC patterns
-      const hasUfcPattern = ufcPatterns.some(pattern => {
-        const regex = new RegExp(pattern, 'i');
-        return regex.test(combined);
-      });
-      
-      // Additional UFC number patterns (UFC 300, UFC301, etc.)
-      const hasUfcNumber = /\bufc\s*[0-9]{1,4}\b/i.test(combined);
-      
-      // UFC series patterns
-      const hasUfcSeries = /\bufc\s*(fight night|fn|ppv|event|main event|prelims)\b/i.test(combined);
-      
-      // Exclude patterns that might give false positives
-      const excludePatterns = [
-        'ufc gym',
-        'ufc training',
-        'ufc workout',
-        'ufc game',
-        'ufc undefeated',
-        'ufc ultimate',
-        'ufc champion',
-        'ufc history',
-        'ufc documentary',
-        'ufc embedded',
-        'ufc countdown',
-        'ufc weigh',
-        'ufc prelude',
-        'ufc post fight',
-        'ufc press conference',
-        'ufc interview',
-        'ufc highlights',
-        'ufc best of',
-        'ufc classic',
-        'ufc greatest',
-        'ufc legacy',
-        'ufc hall of fame',
-        'ufc unleashed',
-        'ufc connected',
-        'ufc tonight',
-        'ufc now',
-        'ufc all access',
-        'ufc ultimate insider',
-        'ufc ultimate fighter', // This is a specific series we might want to include actually
-        'tuf', // The Ultimate Fighter
-        'ultimate fighter' // The Ultimate Fighter
-      ];
-      
-      const shouldExclude = excludePatterns.some(pattern => {
-        const regex = new RegExp(pattern, 'i');
-        return regex.test(combined);
-      });
-      
-      // Also exclude other MMA organizations
-      const otherOrgs = [
-        'bellator',
-        'one championship',
-        'one fc',
-        'pfl',
-        'bare knuckle',
-        'bkfc',
-        'rizin',
-        'k-1',
-        'glory',
-        'wsof',
-        'world series of fighting',
-        'invicta',
-        'aca',
-        'efn',
-        'eagle fc',
-        'brave cf',
-        'ksw',
-        'cage warriors',
-        'legacy fc',
-        'lfa'
-      ];
-      
-      const hasOtherOrg = otherOrgs.some(org => {
-        const regex = new RegExp(org, 'i');
-        return regex.test(combined);
-      });
-      
-      // Return true if it has specific UFC patterns AND doesn't contain exclude patterns or other organizations
-      return (hasUfcPattern || hasUfcNumber || hasUfcSeries) && !shouldExclude && !hasOtherOrg;
+      return hasUfc;
     });
     
-    console.log(`Found ${ufcTorrents.length} UFC torrents after filtering`);
+    console.log(`Found ${ufcTorrents.length} UFC torrents`);
     
     // Convert to Stremio catalog format
     const metas = ufcTorrents.map(torrent => {
@@ -163,7 +72,7 @@ module.exports = async (req, res) => {
         displayTitle = 'UFC: ' + displayTitle;
       }
       
-      // Create ID with torrent ID AND original filename for meta handler
+      // Create ID with REAL torrent ID AND original filename for meta handler
       const id = `rd_ufc_${torrent.id}_${encodeURIComponent(originalFilename)}`;
       
       return {
