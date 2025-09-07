@@ -26,6 +26,14 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api/test-image.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/debug-torrents.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/utils/**/*.js",
       "use": "@vercel/node"
     }
@@ -58,10 +66,14 @@
     {
       "src": "/test-player",
       "dest": "/api/test-player.js"
-    }
+    },
     {
       "src": "/test-image",
       "dest": "/api/test-image.js"
+    },
+    {
+      "src": "/debug-torrents",
+      "dest": "/api/debug-torrents.js"
     }
   ],
   "env": {
