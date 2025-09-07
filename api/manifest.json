@@ -3,18 +3,36 @@
   "version": "1.0.0",
   "name": "Real-Debrid Cloud",
   "description": "Access your Real-Debrid cloud files in Stremio",
-  "resources": ["catalog"],
+  "logo": "https://lacuna-designs.co.uk/navs_real-debrid_cloud/logo.png",
+  "resources": [
+    {
+      "name": "catalog",
+      "types": ["movie"],
+      "idPrefixes": ["rd_"]
+    },
+    {
+      "name": "meta",
+      "types": ["movie"],
+      "idPrefixes": ["rd_"]
+    },
+    {
+      "name": "stream",
+      "types": ["movie"], 
+      "idPrefixes": ["rd_"]
+    }
+  ],
   "types": ["movie"],
   "catalogs": [
     {
       "type": "movie",
       "id": "debrid-cloud",
-      "name": "All Cloud"
+      "name": "All Cloud (Real-Debrid)"
     },
     {
       "type": "movie",
       "id": "ufc-events",
-      "name": "UFC Content"
+      "name": "UFC Content (Real-Debrid)"
     }
-  ]
+  ],
+  "idPrefixes": ["rd_"]
 }
