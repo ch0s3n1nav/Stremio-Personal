@@ -30,14 +30,6 @@
     {
       "src": "/catalog/movie/ufc-events.json",
       "dest": "/api/catalog/movie/ufc-events.js"
-    },
-    {
-      "src": "/catalog/series/debrid-cloud.json",
-      "dest": "/api/catalog/series/debrid-cloud.js"
-    },
-    {
-      "src": "/catalog/series/ufc-events.json",
-      "dest": "/api/catalog/series/ufc-events.js"
     }
   ],
   "env": {
