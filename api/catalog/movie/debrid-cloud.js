@@ -44,32 +44,26 @@ module.exports = async (req, res) => {
     const metas = torrents
       .filter(torrent => torrent.status === 'downloaded')
       .map(torrent => {
-        // Extract a cleaner title from the filename
-        const originalName = torrent.filename || torrent.original_filename || '';
-        let title = originalName
+        // Use the EXACT filename from Real-Debrid
+        const originalFilename = torrent.filename || torrent.original_filename || 'Unknown File';
+        
+        // Create a clean display title (remove file extension for better appearance)
+        let displayTitle = originalFilename
+          .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
           .replace(/\./g, ' ')
           .replace(/_/g, ' ')
-          .replace(/([a-z])([A-Z])/g, '$1 $2')
-          .replace(/\s+/g, ' ')
           .trim();
         
-        // Remove common file extensions
-        title = title.replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '');
-        
-        // Shorten very long titles
-        if (title.length > 50) {
-          title = title.substring(0, 47) + '...';
-        }
-        
-        // Create ID with torrent ID AND filename for meta handler
-        const id = `rd_movie_${torrent.id}_${encodeURIComponent(torrent.filename)}`;
+        // Create ID with torrent ID AND original filename for meta handler
+        const id = `rd_movie_${torrent.id}_${encodeURIComponent(originalFilename)}`;
         
         return {
           id: id,
           type: 'movie',
-          name: title,
-          poster: `https://img.real-debrid.com/?text=${encodeURIComponent(title)}&width=300&height=450`,
+          name: displayTitle, // Use the cleaned-up title for display
+          poster: `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`,
           posterShape: 'poster',
+          description: `From your Real-Debrid cloud: ${displayTitle}`,
           genres: ['Real-Debrid', 'Cloud']
         };
       });
@@ -78,35 +72,7 @@ module.exports = async (req, res) => {
     res.json({ metas });
   } catch (error) {
     console.error('Error in debrid-cloud catalog:', error);
-    // Return sample data as fallback
-    res.json({ 
-      metas: [
-        {
-          id: "rd_movie_1_sample",
-          type: "movie",
-          name: "Sample Movie 1 (Fallback)",
-          poster: "https://img.real-debrid.com/?text=Sample+1",
-          posterShape: "poster"
-        },
-        {
-          id: "rd_movie_2_sample",
-          type: "movie",
-          name: "Sample Movie 2 (Fallback)",
-          poster: "https://img.real-debrid.com/?text=Sample+2",
-          posterShape: "poster"
-        }
-      ]
-    });
+    // Return empty array instead of sample data
+    res.json({ metas: [] });
   }
 };
-
-// Simple hash function for generating consistent IDs
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(16);
-}
