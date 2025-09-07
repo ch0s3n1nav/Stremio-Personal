@@ -1,5 +1,4 @@
 const { REAL_DEBRID_API_KEY } = process.env;
-const { findImageForTitle } = require('../utils/imageFinder');
 
 module.exports = async (req, res) => {
   try {
@@ -44,11 +43,9 @@ module.exports = async (req, res) => {
       .replace(/_/g, ' ')
       .trim();
 
-    // Find appropriate image
-    const poster = await findImageForTitle(displayTitle, isUfc);
-    const background = isUfc 
-      ? 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=ff0000'
-      : `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
+    // Simple image URL (we'll add TMDB later)
+    const poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
+    const background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
 
     // Create proper meta response
     const meta = {
