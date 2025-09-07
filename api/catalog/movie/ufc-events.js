@@ -2,6 +2,8 @@ const { REAL_DEBRID_API_KEY } = process.env;
 
 module.exports = async (req, res) => {
   try {
+    console.log('UFC Events endpoint called');
+    
     // Set CORS headers
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,9 +17,12 @@ module.exports = async (req, res) => {
     }
 
     if (!REAL_DEBRID_API_KEY) {
-      throw new Error('Real-Debrid API key is not configured');
+      console.error('Real-Debrid API key is not configured');
+      return res.json({ metas: [] });
     }
 
+    console.log('Fetching torrents from Real-Debrid API for UFC content');
+    
     // Fetch torrents from Real-Debrid API
     const response = await fetch('https://api.real-debrid.com/rest/1.0/torrents', {
       headers: {
@@ -26,19 +31,81 @@ module.exports = async (req, res) => {
     });
 
     if (!response.ok) {
-      throw new Error(`Real-Debrid API error: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error(`Real-Debrid API error: ${response.status} ${response.statusText}`, errorText);
+      return res.json({ metas: [] });
     }
 
     const torrents = await response.json();
     
-    // Filter for UFC content and ready torrents
-    const ufcTorrents = torrents.filter(torrent => 
-      torrent.status === 'downloaded' && (
-        (torrent.filename && torrent.filename.toLowerCase().includes('ufc')) || 
-        (torrent.original_filename && torrent.original_filename.toLowerCase().includes('ufc')) ||
-        ((torrent.filename + ' ' + torrent.original_filename).toLowerCase().includes('mma'))
-      )
-    );
+    console.log(`Found ${torrents.length} torrents from Real-Debrid API`);
+    
+    // Improved UFC filtering - check for various UFC patterns
+    const ufcTorrents = torrents.filter(torrent => {
+      if (torrent.status !== 'downloaded') return false;
+      
+      const filename = (torrent.filename || '').toLowerCase();
+      const originalFilename = (torrent.original_filename || '').toLowerCase();
+      const combined = filename + ' ' + originalFilename;
+      
+      // UFC patterns to match
+      const ufcPatterns = [
+        'ufc', 
+        'ultimate fighting championship',
+        'ufc fight night',
+        'ufc prelims',
+        'ufc main event',
+        'ufc ppv',
+        'ufc event',
+        'ufc [0-9]', // UFC followed by numbers
+        'ufc[0-9]',  // UFC followed by numbers (no space)
+        ' ufc '      // UFC with spaces around it
+      ];
+      
+      // MMA patterns that might indicate UFC content
+      const mmaPatterns = [
+        'mma',
+        'mixed martial arts',
+        'fight night'
+      ];
+      
+      // Check if it contains UFC patterns
+      const hasUfcPattern = ufcPatterns.some(pattern => {
+        const regex = new RegExp(pattern, 'i');
+        return regex.test(combined);
+      });
+      
+      // Check if it contains MMA patterns BUT exclude non-UFC organizations
+      const hasMmaPattern = mmaPatterns.some(pattern => {
+        const regex = new RegExp(pattern, 'i');
+        return regex.test(combined);
+      });
+      
+      // Exclude other MMA organizations
+      const excludePatterns = [
+        'bellator',
+        'one championship',
+        'one fc',
+        'pfl',
+        'bare knuckle',
+        'bkfc',
+        'rizin',
+        'k-1',
+        'glory',
+        'wsof',
+        'world series of fighting'
+      ];
+      
+      const shouldExclude = excludePatterns.some(pattern => {
+        const regex = new RegExp(pattern, 'i');
+        return regex.test(combined);
+      });
+      
+      // Return true if it has UFC patterns, or MMA patterns but not excluded organizations
+      return hasUfcPattern || (hasMmaPattern && !shouldExclude);
+    });
+    
+    console.log(`Found ${ufcTorrents.length} UFC torrents`);
     
     // Convert to Stremio catalog format
     const metas = ufcTorrents.map(torrent => {
@@ -50,46 +117,66 @@ module.exports = async (req, res) => {
         .replace(/\s+/g, ' ')
         .trim();
       
-      // Add UFC prefix and shorten if needed
+      // Remove common file extensions
+      title = title.replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '');
+      
+      // Remove common quality indicators (keep them in the name for identification)
+      title = title
+        .replace(/\b(1080p|720p|480p|2160p|4k|hd|sd|bluray|webrip|webdl|hdtv|dvdrip|brrip|bdrip)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Remove common release group tags
+      title = title
+        .replace(/\b(rarbg|yts|amzn|amazon|netflix|hulu|disney|dc|hbo|max)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Remove extra parentheses and brackets
+      title = title
+        .replace(/[\[\](){}]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Ensure UFC is in the title for consistency
       if (!title.toLowerCase().includes('ufc')) {
         title = 'UFC: ' + title;
       }
       
-      if (title.length > 50) {
-        title = title.substring(0, 47) + '...';
+      // Shorten very long titles
+      if (title.length > 60) {
+        title = title.substring(0, 57) + '...';
       }
       
+      // Create a simple hash for the ID
+      const idHash = simpleHash(torrent.id + title);
+      
       return {
-        id: `rd_ufc_${torrent.id}`,
+        id: `rd_ufc_${idHash}`,
         type: 'movie',
         name: title,
-        poster: `https://img.real-debrid.com/?text=${encodeURIComponent(title)}`,
-        posterShape: 'poster',
-        genres: ['UFC', 'MMA', 'Fighting', 'Real-Debrid']
+        poster: `https://img.real-debrid.com/?text=${encodeURIComponent(title)}&width=300&height=450`,
+        posterShape: 'regular',
+        description: `UFC Content from your Real-Debrid cloud`,
+        genres: ['UFC', 'MMA', 'Fighting', 'Sports']
       };
     });
 
+    console.log(`Returning ${metas.length} UFC torrents`);
     res.json({ metas });
   } catch (error) {
     console.error('Error in UFC events catalog:', error);
-    // Return sample UFC data as fallback
-    res.json({ 
-      metas: [
-        {
-          id: "rd_ufc_1",
-          type: "movie",
-          name: "UFC 300: Sample Event (Fallback)",
-          poster: "https://img.real-debrid.com/?text=UFC+300",
-          posterShape: "poster"
-        },
-        {
-          id: "rd_ufc_2",
-          type: "movie",
-          name: "UFC 299: Another Event (Fallback)",
-          poster: "https://img.real-debrid.com/?text=UFC+299",
-          posterShape: "poster"
-        }
-      ]
-    });
+    res.json({ metas: [] });
   }
 };
+
+// Simple hash function for generating consistent IDs
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
