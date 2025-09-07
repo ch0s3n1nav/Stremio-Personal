@@ -54,13 +54,13 @@ module.exports = async (req, res) => {
           .replace(/_/g, ' ')
           .trim();
         
-        // Create ID with torrent ID AND original filename for meta handler
+        // Create ID with REAL torrent ID AND original filename for meta handler
         const id = `rd_movie_${torrent.id}_${encodeURIComponent(originalFilename)}`;
         
         return {
           id: id,
           type: 'movie',
-          name: displayTitle, // Use the cleaned-up title for display
+          name: displayTitle,
           poster: `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`,
           posterShape: 'poster',
           description: `From your Real-Debrid cloud: ${displayTitle}`,
@@ -72,7 +72,6 @@ module.exports = async (req, res) => {
     res.json({ metas });
   } catch (error) {
     console.error('Error in debrid-cloud catalog:', error);
-    // Return empty array instead of sample data
     res.json({ metas: [] });
   }
 };
