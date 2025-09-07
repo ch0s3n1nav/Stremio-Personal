@@ -1,13 +1,14 @@
 const { REAL_DEBRID_API_KEY } = process.env;
 
 // Use a try-catch for the require to prevent breaking the handler
-let imageFinder;
+let ufcImageFinder;
 try {
-  imageFinder = require('../utils/imageFinder');
+  ufcImageFinder = require('../utils/ufcImageFinder');
 } catch (error) {
-  console.warn('Image finder not available, using fallback images');
-  imageFinder = {
-    findImageForTitle: (title, isUfc) => `https://img.real-debrid.com/?text=${encodeURIComponent(title)}&width=300&height=450`
+  console.warn('UFC image finder not available, using fallback images');
+  ufcImageFinder = {
+    findUfcEventImage: (title) => `https://img.real-debrid.com/?text=${encodeURIComponent(title)}&width=300&height=450`,
+    getUfcBackgroundImage: () => `https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000`
   };
 }
 
@@ -54,11 +55,18 @@ module.exports = async (req, res) => {
       .replace(/_/g, ' ')
       .trim();
 
-    // Get appropriate image (with fallback)
-    const poster = imageFinder.findImageForTitle(displayTitle, isUfc);
-    const background = isUfc 
-      ? 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=ff0000'
-      : `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
+    // Get appropriate image
+    let poster, background;
+    
+    if (isUfc) {
+      // Use UFC-specific images
+      poster = ufcImageFinder.findUfcEventImage(displayTitle);
+      background = ufcImageFinder.getUfcBackgroundImage(displayTitle);
+    } else {
+      // Use generic images for non-UFC content
+      poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
+      background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
+    }
 
     // Create proper meta response
     const meta = {
