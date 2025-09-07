@@ -2,7 +2,6 @@ const { REAL_DEBRID_API_KEY } = process.env;
 
 module.exports = async (req, res) => {
   try {
-    // Extract ID from the request
     const id = req.query.id;
     console.log('Meta request for ID:', id);
     
@@ -22,51 +21,57 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'ID parameter is required' });
     }
 
-    // Extract the original title from the ID
-    // Our IDs are formatted like: rd_movie_abc123 or rd_ufc_abc123
-    const titleFromId = id.replace(/^rd_(movie|ufc)_/, '').replace(/_/g, ' ');
+    // Extract the filename from the ID
+    // ID format: rd_movie_12345_UFC.Tuesday.Night.Contender.Series.S09W04.1080p.WEB-DL.H264.Fight-BB.mkv
+    const parts = id.split('_');
+    let filename = '';
     
-    let title = decodeURIComponent(titleFromId);
-    
-    // If title is still a hash, create a friendly name
-    if (title.length === 32 || title.length === 40 || /^[0-9a-f]+$/i.test(title)) {
-      title = 'Real-Debrid Content';
+    if (parts.length >= 4) {
+      // Rejoin everything after the third underscore (which is the filename)
+      filename = parts.slice(3).join('_');
+      filename = decodeURIComponent(filename);
+    } else {
+      // Fallback if ID format is different
+      filename = id.replace(/^rd_(movie|ufc)_/, '').replace(/_/g, ' ');
+      filename = decodeURIComponent(filename);
     }
 
-    // Create proper meta response - NOTE: The response should be { meta: {...} } not { metas: [...] }
+    // Clean up the title for display (remove file extension, etc.)
+    let displayTitle = filename
+      .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
+      .replace(/\./g, ' ')
+      .replace(/_/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Create proper meta response
     const meta = {
       id: id,
       type: 'movie',
-      name: title,
-      poster: `https://img.real-debrid.com/?text=${encodeURIComponent(title)}&width=300&height=450`,
+      name: displayTitle,
+      poster: `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`,
       posterShape: 'regular',
-      description: `Content from your Real-Debrid cloud storage`,
-      background: `https://img.real-debrid.com/?text=${encodeURIComponent(title)}&width=800&height=450`,
-      logo: `https://img.real-debrid.com/?text=RealDebrid&width=300&height=100`,
+      description: `Content from your Real-Debrid cloud: ${displayTitle}`,
+      background: `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`,
       genres: ['Real-Debrid', 'Cloud'],
       runtime: '120 min',
       releaseInfo: new Date().toISOString().split('T')[0],
-      imdbRating: '8.0',
-      director: ['Real-Debrid'],
-      cast: ['Your Content'],
-      // Add more required fields
       year: new Date().getFullYear().toString(),
-      // Important: Add video information for the stream handler to work
       videos: [
         {
           id: id + '_video',
-          title: title,
+          title: displayTitle,
           released: new Date().toISOString(),
-          thumbnail: `https://img.real-debrid.com/?text=${encodeURIComponent(title)}&width=300&height=450`
+          thumbnail: `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`
         }
       ]
     };
 
-    console.log('Returning meta for ID:', id);
-    res.json({ meta: meta }); // Note: { meta: {...} } not { metas: [...] }
+    console.log('Returning meta for title:', displayTitle);
+    res.json({ meta: meta });
   } catch (error) {
     console.error('Error in meta handler:', error);
-    // Fallback response with proper format
+    // Fallback response
     res.json({
       meta: {
         id: req.query.id || 'unknown',
