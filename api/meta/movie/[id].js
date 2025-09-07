@@ -1,4 +1,5 @@
 const { REAL_DEBRID_API_KEY } = process.env;
+const { findImageForTitle } = require('../utils/imageFinder');
 
 module.exports = async (req, res) => {
   try {
@@ -22,12 +23,10 @@ module.exports = async (req, res) => {
     }
 
     // Extract the original filename from the ID
-    // ID format: rd_movie_12345_UFC.Tuesday.Night.Contender.Series.S09W04.1080p.WEB-DL.H264.Fight-BB.mkv
     const parts = id.split('_');
     let originalFilename = '';
     
     if (parts.length >= 4) {
-      // Rejoin everything after the third underscore (which is the original filename)
       originalFilename = parts.slice(3).join('_');
       originalFilename = decodeURIComponent(originalFilename);
     } else {
@@ -35,30 +34,40 @@ module.exports = async (req, res) => {
       originalFilename = decodeURIComponent(originalFilename);
     }
 
-    // Create display title (remove file extension)
+    // Check if this is UFC content
+    const isUfc = id.startsWith('rd_ufc_');
+    
+    // Create display title
     let displayTitle = originalFilename
       .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
       .replace(/\./g, ' ')
       .replace(/_/g, ' ')
       .trim();
 
+    // Find appropriate image
+    const poster = await findImageForTitle(displayTitle, isUfc);
+    const background = isUfc 
+      ? 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=ff0000'
+      : `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
+
     // Create proper meta response
     const meta = {
       id: id,
       type: 'movie',
       name: displayTitle,
-      poster: `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`,
+      poster: poster,
       posterShape: 'regular',
       description: `Content from your Real-Debrid cloud: ${displayTitle}`,
-      background: `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`,
-      genres: ['Real-Debrid', 'Cloud'],
+      background: background,
+      genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'],
       runtime: '120 min',
       year: new Date().getFullYear().toString(),
       videos: [
         {
           id: id + '_video',
           title: displayTitle,
-          released: new Date().toISOString()
+          released: new Date().toISOString(),
+          thumbnail: poster
         }
       ]
     };
