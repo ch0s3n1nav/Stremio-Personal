@@ -148,11 +148,11 @@ module.exports = async (req, res) => {
         title = title.substring(0, 57) + '...';
       }
       
-      // Create a simple hash for the ID
-      const idHash = simpleHash(torrent.id + title);
+      // Create ID with torrent ID AND filename for meta handler
+      const id = `rd_ufc_${torrent.id}_${encodeURIComponent(torrent.filename)}`;
       
       return {
-        id: `rd_ufc_${idHash}`,
+        id: id,
         type: 'movie',
         name: title,
         poster: `https://img.real-debrid.com/?text=${encodeURIComponent(title)}&width=300&height=450`,
