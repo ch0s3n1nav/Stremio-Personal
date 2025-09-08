@@ -50,33 +50,37 @@ module.exports = async (req, res) => {
         // Use the EXACT filename from Real-Debrid
         const originalFilename = torrent.filename || torrent.original_filename || 'Unknown File';
         
-        // Create a clean display title (remove file extension for better appearance)
+        // Create a clean display title
         let displayTitle = originalFilename
           .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
           .replace(/\./g, ' ')
           .replace(/_/g, ' ')
           .trim();
         
-        // Check if this is UFC content - improved detection
-        const filenameLower = originalFilename.toLowerCase();
-        const isUfc = filenameLower.includes('ufc') || 
-                      filenameLower.includes('ultimate fighting championship') ||
-                      filenameLower.includes('mma') && 
-                      !filenameLower.includes('bellator') &&
-                      !filenameLower.includes('one championship');
+        // SIMPLE UFC detection - just check for 'ufc' in filename
+        const isUfc = originalFilename.toLowerCase().includes('ufc');
+        console.log('File:', originalFilename, 'isUfc:', isUfc);
         
         // Create ID with proper prefix
         const idPrefix = isUfc ? 'rd_ufc' : 'rd_movie';
         const id = `${idPrefix}_${torrent.id}_${encodeURIComponent(originalFilename)}`;
         
+        // Use UFC poster for UFC content, text-based for others
+        const poster = isUfc ? ufcPortraitPoster : `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=600&height=900`;
+        
         return {
           id: id,
           type: 'movie',
           name: displayTitle,
-          poster: isUfc ? ufcPortraitPoster : `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=600&height=900`,
+          poster: poster,
           posterShape: 'regular',
           description: `From your Real-Debrid cloud: ${displayTitle}`,
-          genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud']
+          genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'],
+          // Add debug info
+          _debug: {
+            isUfc: isUfc,
+            originalFilename: originalFilename
+          }
         };
       });
 
