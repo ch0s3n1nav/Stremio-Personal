@@ -1,27 +1,56 @@
-const { REAL_DEBRID_API_KEY } = process.env;
+const { REAL_DEBRID_API_KEY, TMDB_API_KEY } = process.env;
 
 // UFC images
 const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
 const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
-// Use a try-catch for TMDB require
-let tmdbImageFinder;
-try {
-  tmdbImageFinder = require('../utils/tmdbImageFinder');
-} catch (error) {
-  console.warn('TMDB image finder not available, using fallback images');
-  tmdbImageFinder = {
-    findTmdbPoster: () => null,
-    findTmdbBackground: () => null,
-    isTvShow: () => false,
-    cleanTitle: (title) => title
-  };
+async function searchTmdb(title, isMovie = true) {
+  try {
+    if (!TMDB_API_KEY) return null;
+
+    // Clean title
+    let cleanTitle = title
+      .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
+      .replace(/\b(1080p|720p|480p|2160p|4k|hd|sd|bluray|webrip|webdl|hdtv|dvdrip|brrip|bdrip|remux)\b/gi, '')
+      .replace(/\b(x264|x265|hevc|avc|aac|ac3|dts|ddp5\.1|atmos)\b/gi, '')
+      .replace(/\[.*?\]|\(.*?\)/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    console.log('Searching TMDB for:', cleanTitle);
+    
+    const searchUrl = `https://api.themoviedb.org/3/search/${isMovie ? 'movie' : 'tv'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}`;
+    const response = await fetch(searchUrl);
+    
+    if (!response.ok) {
+      console.error('TMDB API error:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    return data.results && data.results.length > 0 ? data.results[0] : null;
+    
+  } catch (error) {
+    console.error('TMDB search error:', error);
+    return null;
+  }
+}
+
+function isTvShow(title) {
+  const lowerTitle = title.toLowerCase();
+  return lowerTitle.includes('season') || 
+         lowerTitle.includes('s01') || 
+         lowerTitle.includes('s02') ||
+         lowerTitle.match(/s\d+e\d+/i) ||
+         lowerTitle.includes('episode') ||
+         lowerTitle.includes('series');
 }
 
 module.exports = async (req, res) => {
   try {
     const id = req.query.id;
-    console.log('Meta request for ID:', id);
+    console.log('Meta request for ID:', id, 'TMDB Key:', TMDB_API_KEY ? 'Yes' : 'No');
     
     // Set CORS headers
     res.setHeader('Content-Type', 'application/json');
@@ -29,7 +58,6 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    // Handle OPTIONS request for CORS
     if (req.method === 'OPTIONS') {
       res.status(200).end();
       return;
@@ -39,19 +67,12 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'ID parameter is required' });
     }
 
-    // Extract the original filename from the ID
+    // Extract filename from ID
     const parts = id.split('_');
-    let originalFilename = '';
-    
-    if (parts.length >= 4) {
-      originalFilename = parts.slice(3).join('_');
-      originalFilename = decodeURIComponent(originalFilename);
-    } else {
-      originalFilename = id.replace(/^rd_(movie|ufc)_/, '');
-      originalFilename = decodeURIComponent(originalFilename);
-    }
+    let originalFilename = parts.length >= 4 ? 
+      decodeURIComponent(parts.slice(3).join('_')) : 
+      decodeURIComponent(id.replace(/^rd_(movie|ufc)_/, ''));
 
-    // Check if this is UFC content
     const isUfc = id.startsWith('rd_ufc_');
     
     // Create display title
@@ -61,31 +82,32 @@ module.exports = async (req, res) => {
       .replace(/_/g, ' ')
       .trim();
 
-    // Get appropriate images
+    // Get images
     let poster, background;
     
     if (isUfc) {
-      // Use UFC-specific images
       poster = ufcLogo;
       background = ufcBackground;
     } else {
-      // Use TMDB for non-UFC content
-      const isTvShow = tmdbImageFinder.isTvShow(displayTitle);
-      const cleanTitle = tmdbImageFinder.cleanTitle(displayTitle);
+      // Try TMDB lookup
+      const isTv = isTvShow(displayTitle);
+      const tmdbResult = await searchTmdb(displayTitle, !isTv);
       
-      // Try to get TMDB poster
-      const tmdbPoster = await tmdbImageFinder.findTmdbPoster(cleanTitle, !isTvShow);
-      const tmdbBackground = await tmdbImageFinder.findTmdbBackground(cleanTitle, !isTvShow);
-      
-      poster = tmdbPoster || `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
-      background = tmdbBackground || `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
+      if (tmdbResult && tmdbResult.poster_path) {
+        poster = TMDB_IMAGE_BASE + tmdbResult.poster_path;
+        background = tmdbResult.backdrop_path ? 
+          `https://image.tmdb.org/t/p/w1280${tmdbResult.backdrop_path}` : 
+          poster;
+      } else {
+        // Fallback to text images
+        poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
+        background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
+      }
     }
 
-    // Determine type (movie or series)
-    const type = tmdbImageFinder.isTvShow(displayTitle) ? 'series' : 'movie';
+    const type = isTvShow(displayTitle) ? 'series' : 'movie';
     const genres = isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'];
 
-    // Create proper meta response
     const meta = {
       id: id,
       type: type,
@@ -107,7 +129,7 @@ module.exports = async (req, res) => {
       ]
     };
 
-    console.log('Returning meta for:', displayTitle, 'Type:', type, 'Poster:', poster);
+    console.log('Returning meta with poster:', poster);
     res.json({ meta: meta });
   } catch (error) {
     console.error('Error in meta handler:', error);
