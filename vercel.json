@@ -6,56 +6,12 @@
       "use": "@vercel/static"
     },
     {
-      "src": "api/configure.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     },
     {
-      "src": "api/catalog/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/meta/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/stream/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/test-player.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/test-image.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/test-tmdb.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/test-tmdb-simple.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/test-tmdb-direct.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/test-tmdb-penguin.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/debug-torrents.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/debug-catalog.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/debug-env.js",
-      "use": "@vercel/node"
+      "src": "api/**/*.json",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -92,28 +48,12 @@
       "dest": "/api/test-image.js"
     },
     {
-      "src": "/test-tmdb",
-      "dest": "/api/test-tmdb.js"
-    },
-    {
       "src": "/test-tmdb-simple",
       "dest": "/api/test-tmdb-simple.js"
     },
     {
       "src": "/test-tmdb-direct",
       "dest": "/api/test-tmdb-direct.js"
-    },
-    {
-      "src": "/test-tmdb-penguin",
-      "dest": "/api/test-tmdb-penguin.js"
-    },
-    {
-      "src": "/debug-torrents",
-      "dest": "/api/debug-torrents.js"
-    },
-    {
-      "src": "/debug-catalog",
-      "dest": "/api/debug-catalog.js"
     },
     {
       "src": "/debug-env",
