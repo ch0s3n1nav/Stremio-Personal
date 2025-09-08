@@ -58,10 +58,57 @@
     {
       "src": "/debug-env",
       "dest": "/api/debug-env.js"
+    },
+    {
+      "src": "/(.*)",
+      "status": 404,
+      "dest": "/api/404.js"
     }
   ],
   "env": {
     "REAL_DEBRID_API_KEY": "VYESHZI4D3BF3DLJ6W4242ZTCCSR3RVSFWTGKTVRTOQ223LDRI6A",
     "TMDB_API_KEY": "8d6b19dfd39b5efe48ed79708a6850b3"
-  }
+  },
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ]
 }
