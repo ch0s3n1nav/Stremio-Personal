@@ -5,12 +5,16 @@ const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
 const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
-async function searchTmdb(title, isMovie = true) {
+// Simple TMDB search function
+async function simpleTmdbSearch(title, isMovie = true) {
   try {
-    if (!TMDB_API_KEY) return null;
+    if (!TMDB_API_KEY) {
+      console.log('TMDB_API_KEY not available');
+      return null;
+    }
 
-    // Clean title
-    let cleanTitle = title
+    // Clean the title
+    const cleanTitle = title
       .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
       .replace(/\b(1080p|720p|480p|2160p|4k|hd|sd|bluray|webrip|webdl|hdtv|dvdrip|brrip|bdrip|remux)\b/gi, '')
       .replace(/\b(x264|x265|hevc|avc|aac|ac3|dts|ddp5\.1|atmos)\b/gi, '')
@@ -18,13 +22,13 @@ async function searchTmdb(title, isMovie = true) {
       .replace(/\s+/g, ' ')
       .trim();
 
-    console.log('Searching TMDB for:', cleanTitle);
+    console.log('TMDB searching for:', cleanTitle);
     
     const searchUrl = `https://api.themoviedb.org/3/search/${isMovie ? 'movie' : 'tv'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}`;
     const response = await fetch(searchUrl);
     
     if (!response.ok) {
-      console.error('TMDB API error:', response.status);
+      console.log('TMDB API failed:', response.status);
       return null;
     }
     
@@ -32,7 +36,7 @@ async function searchTmdb(title, isMovie = true) {
     return data.results && data.results.length > 0 ? data.results[0] : null;
     
   } catch (error) {
-    console.error('TMDB search error:', error);
+    console.log('TMDB search error:', error.message);
     return null;
   }
 }
@@ -50,7 +54,7 @@ function isTvShow(title) {
 module.exports = async (req, res) => {
   try {
     const id = req.query.id;
-    console.log('Meta request for ID:', id, 'TMDB Key:', TMDB_API_KEY ? 'Yes' : 'No');
+    console.log('Meta request for ID:', id);
     
     // Set CORS headers
     res.setHeader('Content-Type', 'application/json');
@@ -89,19 +93,26 @@ module.exports = async (req, res) => {
       poster = ufcLogo;
       background = ufcBackground;
     } else {
-      // Try TMDB lookup
+      // Try TMDB lookup with timeout
       const isTv = isTvShow(displayTitle);
-      const tmdbResult = await searchTmdb(displayTitle, !isTv);
+      
+      // Use Promise.race to timeout TMDB search after 3 seconds
+      const tmdbPromise = simpleTmdbSearch(displayTitle, !isTv);
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3000));
+      
+      const tmdbResult = await Promise.race([tmdbPromise, timeoutPromise]);
       
       if (tmdbResult && tmdbResult.poster_path) {
         poster = TMDB_IMAGE_BASE + tmdbResult.poster_path;
         background = tmdbResult.backdrop_path ? 
           `https://image.tmdb.org/t/p/w1280${tmdbResult.backdrop_path}` : 
           poster;
+        console.log('Using TMDB image:', poster);
       } else {
         // Fallback to text images
         poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
         background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
+        console.log('Using fallback text image');
       }
     }
 
@@ -129,7 +140,6 @@ module.exports = async (req, res) => {
       ]
     };
 
-    console.log('Returning meta with poster:', poster);
     res.json({ meta: meta });
   } catch (error) {
     console.error('Error in meta handler:', error);
