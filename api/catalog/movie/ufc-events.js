@@ -1,5 +1,8 @@
 const { REAL_DEBRID_API_KEY } = process.env;
 
+// UFC portrait poster for catalog view
+const ufcPortraitPoster = 'https://i.imgur.com/GkrHvhe.jpeg';
+
 module.exports = async (req, res) => {
   try {
     console.log('UFC Events endpoint called');
@@ -72,6 +75,11 @@ module.exports = async (req, res) => {
         displayTitle = 'UFC: ' + displayTitle;
       }
       
+      // Shorten very long titles
+      if (displayTitle.length > 60) {
+        displayTitle = displayTitle.substring(0, 57) + '...';
+      }
+      
       // Create ID with REAL torrent ID AND original filename for meta handler
       const id = `rd_ufc_${torrent.id}_${encodeURIComponent(originalFilename)}`;
       
@@ -79,14 +87,14 @@ module.exports = async (req, res) => {
         id: id,
         type: 'movie',
         name: displayTitle,
-        poster: `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`,
-        posterShape: 'regular',
+        poster: ufcPortraitPoster, // Use the PORTRAIT UFC poster
+        posterShape: 'regular', // Important for portrait aspect
         description: `UFC Content from your Real-Debrid cloud`,
         genres: ['UFC', 'MMA', 'Fighting', 'Sports']
       };
     });
 
-    console.log(`Returning ${metas.length} UFC torrents`);
+    console.log(`Returning ${metas.length} UFC torrents with portrait posters`);
     res.json({ metas });
   } catch (error) {
     console.error('Error in UFC events catalog:', error);
