@@ -1,7 +1,17 @@
 const { REAL_DEBRID_API_KEY } = process.env;
-
-// UFC portrait poster for catalog view
 const ufcPortraitPoster = 'https://i.imgur.com/GkrHvhe.jpeg';
+
+// Use a try-catch for TMDB require
+let tmdbImageFinder;
+try {
+  tmdbImageFinder = require('../utils/tmdbImageFinder');
+} catch (error) {
+  console.warn('TMDB image finder not available for catalog');
+  tmdbImageFinder = {
+    findTmdbPoster: () => null,
+    cleanTitle: (title) => title
+  };
+}
 
 module.exports = async (req, res) => {
   try {
@@ -20,12 +30,9 @@ module.exports = async (req, res) => {
     }
 
     if (!REAL_DEBRID_API_KEY) {
-      console.error('Real-Debrid API key is not configured');
       return res.json({ metas: [] });
     }
 
-    console.log('Fetching torrents from Real-Debrid API');
-    
     // Fetch torrents from Real-Debrid API
     const response = await fetch('https://api.real-debrid.com/rest/1.0/torrents', {
       headers: {
@@ -33,53 +40,49 @@ module.exports = async (req, res) => {
       }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Real-Debrid API error: ${response.status} ${response.statusText}`, errorText);
-      return res.json({ metas: [] });
-    }
+    if (!response.ok) return res.json({ metas: [] });
 
     const torrents = await response.json();
     
-    console.log(`Found ${torrents.length} torrents from Real-Debrid API`);
-    
-    // Filter for only ready torrents and convert to Stremio format
-    const metas = torrents
-      .filter(torrent => torrent.status === 'downloaded')
-      .map(torrent => {
-        // Use the EXACT filename from Real-Debrid
-        const originalFilename = torrent.filename || torrent.original_filename || 'Unknown File';
-        
-        // Create a clean display title
-        let displayTitle = originalFilename
-          .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
-          .replace(/\./g, ' ')
-          .replace(/_/g, ' ')
-          .trim();
-        
-        // SIMPLE UFC detection - just check for 'ufc' in filename
-        const isUfc = originalFilename.toLowerCase().includes('ufc');
-        console.log('File:', originalFilename, 'isUfc:', isUfc);
-        
-        // Create ID with proper prefix
-        const idPrefix = isUfc ? 'rd_ufc' : 'rd_movie';
-        const id = `${idPrefix}_${torrent.id}_${encodeURIComponent(originalFilename)}`;
-        
-        // Use UFC poster for UFC content, text-based for others
-        const poster = isUfc ? ufcPortraitPoster : `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=600&height=900`;
-        
-        return {
-          id: id,
-          type: 'movie',
-          name: displayTitle,
-          poster: poster,
-          posterShape: 'regular',
-          description: `From your Real-Debrid cloud: ${displayTitle}`,
-          genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud']
-        };
-      });
+    // Process all torrents
+    const metas = await Promise.all(
+      torrents
+        .filter(torrent => torrent.status === 'downloaded')
+        .map(async (torrent) => {
+          const originalFilename = torrent.filename || torrent.original_filename || 'Unknown File';
+          const isUfc = originalFilename.toLowerCase().includes('ufc');
+          
+          let displayTitle = originalFilename
+            .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
+            .replace(/\./g, ' ')
+            .replace(/_/g, ' ')
+            .trim();
+          
+          const idPrefix = isUfc ? 'rd_ufc' : 'rd_movie';
+          const id = `${idPrefix}_${torrent.id}_${encodeURIComponent(originalFilename)}`;
+          
+          let poster;
+          if (isUfc) {
+            poster = ufcPortraitPoster;
+          } else {
+            // Try to get TMDB poster for non-UFC content
+            const cleanTitle = tmdbImageFinder.cleanTitle(displayTitle);
+            const tmdbPoster = await tmdbImageFinder.findTmdbPoster(cleanTitle, true);
+            poster = tmdbPoster || `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=600&height=900`;
+          }
+          
+          return {
+            id: id,
+            type: 'movie',
+            name: displayTitle,
+            poster: poster,
+            posterShape: 'regular',
+            description: `From your Real-Debrid cloud: ${displayTitle}`,
+            genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud']
+          };
+        })
+    );
 
-    console.log(`Returning ${metas.length} ready torrents`);
     res.json({ metas });
   } catch (error) {
     console.error('Error in debrid-cloud catalog:', error);
