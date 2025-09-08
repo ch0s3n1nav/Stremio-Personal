@@ -57,11 +57,17 @@ module.exports = async (req, res) => {
           .replace(/_/g, ' ')
           .trim();
         
-        // Check if this is UFC content
-        const isUfc = (originalFilename || '').toLowerCase().includes('ufc');
+        // Check if this is UFC content - improved detection
+        const filenameLower = originalFilename.toLowerCase();
+        const isUfc = filenameLower.includes('ufc') || 
+                      filenameLower.includes('ultimate fighting championship') ||
+                      filenameLower.includes('mma') && 
+                      !filenameLower.includes('bellator') &&
+                      !filenameLower.includes('one championship');
         
-        // Create ID with REAL torrent ID AND original filename for meta handler
-        const id = isUfc ? `rd_ufc_${torrent.id}_${encodeURIComponent(originalFilename)}` : `rd_movie_${torrent.id}_${encodeURIComponent(originalFilename)}`;
+        // Create ID with proper prefix
+        const idPrefix = isUfc ? 'rd_ufc' : 'rd_movie';
+        const id = `${idPrefix}_${torrent.id}_${encodeURIComponent(originalFilename)}`;
         
         return {
           id: id,
