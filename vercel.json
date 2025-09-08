@@ -42,6 +42,10 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api/test-tmdb-penguin.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/debug-torrents.js",
       "use": "@vercel/node"
     },
@@ -98,6 +102,10 @@
     {
       "src": "/test-tmdb-direct",
       "dest": "/api/test-tmdb-direct.js"
+    },
+    {
+      "src": "/test-tmdb-penguin",
+      "dest": "/api/test-tmdb-penguin.js"
     },
     {
       "src": "/debug-torrents",
