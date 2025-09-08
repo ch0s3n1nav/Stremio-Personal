@@ -9,7 +9,7 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 async function simpleTmdbSearch(title, isMovie = true) {
   try {
     if (!TMDB_API_KEY) {
-      console.log('TMDB_API_KEY not available');
+      console.log('TMDB_API_KEY not available in simpleTmdbSearch');
       return null;
     }
 
@@ -22,18 +22,27 @@ async function simpleTmdbSearch(title, isMovie = true) {
       .replace(/\s+/g, ' ')
       .trim();
 
-    console.log('TMDB searching for:', cleanTitle);
+    console.log('TMDB searching for:', cleanTitle, 'isMovie:', isMovie);
     
     const searchUrl = `https://api.themoviedb.org/3/search/${isMovie ? 'movie' : 'tv'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}`;
+    console.log('TMDB search URL:', searchUrl);
+    
     const response = await fetch(searchUrl);
     
     if (!response.ok) {
-      console.log('TMDB API failed:', response.status);
+      console.log('TMDB API failed:', response.status, response.statusText);
       return null;
     }
     
     const data = await response.json();
-    return data.results && data.results.length > 0 ? data.results[0] : null;
+    console.log('TMDB found results:', data.results ? data.results.length : 0);
+    
+    if (data.results && data.results.length > 0) {
+      console.log('First result:', data.results[0].title || data.results[0].name);
+      return data.results[0];
+    }
+    
+    return null;
     
   } catch (error) {
     console.log('TMDB search error:', error.message);
@@ -54,7 +63,7 @@ function isTvShow(title) {
 module.exports = async (req, res) => {
   try {
     const id = req.query.id;
-    console.log('Meta request for ID:', id);
+    console.log('Meta request for ID:', id, 'TMDB Key available:', !!TMDB_API_KEY);
     
     // Set CORS headers
     res.setHeader('Content-Type', 'application/json');
@@ -92,15 +101,15 @@ module.exports = async (req, res) => {
     if (isUfc) {
       poster = ufcLogo;
       background = ufcBackground;
+      console.log('Using UFC images');
     } else {
-      // Try TMDB lookup with timeout
+      console.log('Processing non-UFC content:', displayTitle);
+      
+      // Try TMDB lookup
       const isTv = isTvShow(displayTitle);
+      console.log('Is TV show:', isTv);
       
-      // Use Promise.race to timeout TMDB search after 3 seconds
-      const tmdbPromise = simpleTmdbSearch(displayTitle, !isTv);
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3000));
-      
-      const tmdbResult = await Promise.race([tmdbPromise, timeoutPromise]);
+      const tmdbResult = await simpleTmdbSearch(displayTitle, !isTv);
       
       if (tmdbResult && tmdbResult.poster_path) {
         poster = TMDB_IMAGE_BASE + tmdbResult.poster_path;
@@ -140,6 +149,7 @@ module.exports = async (req, res) => {
       ]
     };
 
+    console.log('Final poster URL:', poster);
     res.json({ meta: meta });
   } catch (error) {
     console.error('Error in meta handler:', error);
