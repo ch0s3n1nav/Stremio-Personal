@@ -1,0 +1,7 @@
+# Ignore all files except what we need
+*
+!vercel.json
+!api/index.js
+!api/utils/
+api/utils/*.test.js
+api/utils/*.spec.js
