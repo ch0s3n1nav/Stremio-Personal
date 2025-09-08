@@ -38,11 +38,19 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api/test-tmdb-direct.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/debug-torrents.js",
       "use": "@vercel/node"
     },
     {
       "src": "api/debug-catalog.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/debug-env.js",
       "use": "@vercel/node"
     }
   ],
@@ -88,13 +96,17 @@
       "dest": "/api/test-tmdb-simple.js"
     },
     {
+      "src": "/test-tmdb-direct",
+      "dest": "/api/test-tmdb-direct.js"
+    },
+    {
       "src": "/debug-torrents",
       "dest": "/api/debug-torrents.js"
     },
     {
       "src": "/debug-catalog",
       "dest": "/api/debug-catalog.js"
-    }
+    },
     {
       "src": "/debug-env",
       "dest": "/api/debug-env.js"
@@ -102,6 +114,6 @@
   ],
   "env": {
     "REAL_DEBRID_API_KEY": "VYESHZI4D3BF3DLJ6W4242ZTCCSR3RVSFWTGKTVRTOQ223LDRI6A",
-    "TMDB_API_KEY": "your_tmdb_api_key_here"
+    "TMDB_API_KEY": "8d6b19dfd39b5efe48ed79708a6850b3"
   }
 }
