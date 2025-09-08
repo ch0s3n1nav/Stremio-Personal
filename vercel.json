@@ -30,15 +30,15 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api/test-tmdb.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/debug-torrents.js",
       "use": "@vercel/node"
     },
     {
       "src": "api/debug-catalog.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/utils/**/*.js",
       "use": "@vercel/node"
     }
   ],
@@ -74,6 +74,10 @@
     {
       "src": "/test-image",
       "dest": "/api/test-image.js"
+    },
+    {
+      "src": "/test-tmdb",
+      "dest": "/api/test-tmdb.js"
     },
     {
       "src": "/debug-torrents",
