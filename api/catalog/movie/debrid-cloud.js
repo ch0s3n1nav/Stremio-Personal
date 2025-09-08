@@ -75,12 +75,7 @@ module.exports = async (req, res) => {
           poster: poster,
           posterShape: 'regular',
           description: `From your Real-Debrid cloud: ${displayTitle}`,
-          genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'],
-          // Add debug info
-          _debug: {
-            isUfc: isUfc,
-            originalFilename: originalFilename
-          }
+          genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud']
         };
       });
 
