@@ -32,12 +32,12 @@
       "dest": "/api/catalog/movie/ufc-events.js"
     },
     {
-      "src": "/meta/movie/(.*).json",
-      "dest": "/api/meta/movie/[id].js?id=$1"
+      "src": "/meta/movie/:id.json",
+      "dest": "/api/meta/movie/index.js?id=$id"
     },
     {
-      "src": "/stream/movie/(.*).json",
-      "dest": "/api/stream/movie/[id].js?id=$1"
+      "src": "/stream/movie/:id.json",
+      "dest": "/api/stream/movie/index.js?id=$id"
     },
     {
       "src": "/test-player",
