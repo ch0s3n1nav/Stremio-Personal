@@ -2,67 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/manifest.json",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/**/*.js",
+      "src": "api/index.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "api/**/*.json",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/manifest.json",
-      "dest": "/api/manifest.json"
-    },
-    {
-      "src": "/configure",
-      "dest": "/api/configure.js"
-    },
-    {
-      "src": "/catalog/movie/debrid-cloud.json",
-      "dest": "/api/catalog/movie/debrid-cloud.js"
-    },
-    {
-      "src": "/catalog/movie/ufc-events.json",
-      "dest": "/api/catalog/movie/ufc-events.js"
-    },
-    {
-      "src": "/meta/movie/:id.json",
-      "dest": "/api/meta/movie/index.js?id=$id"
-    },
-    {
-      "src": "/stream/movie/:id.json",
-      "dest": "/api/stream/movie/index.js?id=$id"
-    },
-    {
-      "src": "/test-player",
-      "dest": "/api/test-player.js"
-    },
-    {
-      "src": "/test-image",
-      "dest": "/api/test-image.js"
-    },
-    {
-      "src": "/test-tmdb-simple",
-      "dest": "/api/test-tmdb-simple.js"
-    },
-    {
-      "src": "/test-tmdb-direct",
-      "dest": "/api/test-tmdb-direct.js"
-    },
-    {
-      "src": "/debug-env",
-      "dest": "/api/debug-env.js"
-    },
-    {
       "src": "/(.*)",
-      "status": 404,
-      "dest": "/api/404.js"
+      "dest": "/api/index.js"
     }
   ],
   "env": {
@@ -70,45 +17,9 @@
     "TMDB_API_KEY": "8d6b19dfd39b5efe48ed79708a6850b3"
   },
   "functions": {
-    "api/**/*.js": {
+    "api/index.js": {
       "maxDuration": 30,
       "memory": 1024
     }
-  },
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Credentials",
-          "value": "true"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        }
-      ]
-    }
-  ]
+  }
 }
