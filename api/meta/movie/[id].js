@@ -5,7 +5,7 @@ const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
 const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
-// Simple TMDB search with better error handling
+// Simple TMDB search function
 async function searchTMDB(title, isMovie = true) {
   try {
     if (!TMDB_API_KEY) {
@@ -13,7 +13,7 @@ async function searchTMDB(title, isMovie = true) {
       return null;
     }
 
-    // Clean the title for better search results
+    // Clean the title
     let cleanTitle = title
       .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
       .replace(/\b(1080p|720p|480p|2160p|4k|hd|sd|bluray|webrip|webdl|hdtv|dvdrip|brrip|bdrip|remux)\b/gi, '')
@@ -22,29 +22,23 @@ async function searchTMDB(title, isMovie = true) {
       .replace(/\s+/g, ' ')
       .trim();
 
-    // Remove season/episode info for better movie matching
-    cleanTitle = cleanTitle.replace(/\s*(s\d+|season\s*\d+|episode\s*\d+).*/gi, '').trim();
-
-    console.log('TMDB searching for cleaned title:', cleanTitle);
+    console.log('TMDB searching for:', cleanTitle);
     
     const searchUrl = `https://api.themoviedb.org/3/search/${isMovie ? 'movie' : 'tv'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}`;
     
     const response = await fetch(searchUrl);
     
     if (!response.ok) {
-      console.log('TMDB API failed:', response.status, response.statusText);
+      console.log('TMDB API failed:', response.status);
       return null;
     }
     
     const data = await response.json();
     
     if (data.results && data.results.length > 0) {
-      const firstResult = data.results[0];
-      console.log('TMDB found result:', firstResult.title || firstResult.name);
-      return firstResult;
+      return data.results[0];
     }
     
-    console.log('No TMDB results found');
     return null;
     
   } catch (error) {
@@ -65,7 +59,13 @@ function isTvShow(title) {
 
 module.exports = async (req, res) => {
   try {
-    const id = req.query.id;
+    // Get ID from query parameter
+    const { id } = req.query;
+    
+    if (!id) {
+      return res.status(400).json({ error: 'ID parameter is required' });
+    }
+
     console.log('Meta request for ID:', id);
     
     // Set CORS headers
@@ -73,15 +73,6 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-      res.status(200).end();
-      return;
-    }
-
-    if (!id) {
-      return res.status(400).json({ error: 'ID parameter is required' });
-    }
 
     // Extract filename from ID
     const parts = id.split('_');
@@ -104,28 +95,10 @@ module.exports = async (req, res) => {
     if (isUfc) {
       poster = ufcLogo;
       background = ufcBackground;
-      console.log('Using UFC images');
     } else {
-      console.log('Processing non-UFC content:', displayTitle);
-      
-      // Try TMDB lookup with timeout
-      const isTv = isTvShow(displayTitle);
-      console.log('Is TV show:', isTv);
-      
-      const tmdbResult = await searchTMDB(displayTitle, !isTv);
-      
-      if (tmdbResult && tmdbResult.poster_path) {
-        poster = TMDB_IMAGE_BASE + tmdbResult.poster_path;
-        background = tmdbResult.backdrop_path ? 
-          `https://image.tmdb.org/t/p/w1280${tmdbResult.backdrop_path}` : 
-          poster;
-        console.log('Using TMDB image:', poster);
-      } else {
-        // Fallback to text images
-        poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
-        background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
-        console.log('Using fallback text image');
-      }
+      // Use text-based images as fallback for now
+      poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
+      background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
     }
 
     const type = isTvShow(displayTitle) ? 'series' : 'movie';
@@ -152,7 +125,6 @@ module.exports = async (req, res) => {
       ]
     };
 
-    console.log('Final poster URL:', poster);
     res.json({ meta: meta });
   } catch (error) {
     console.error('Error in meta handler:', error);
