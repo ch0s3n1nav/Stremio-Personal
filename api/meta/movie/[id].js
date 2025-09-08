@@ -8,4 +8,12 @@ const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=45
 const tmdbImages = {
   'the penguin': {
     poster: 'https://image.tmdb.org/t/p/w500/5R4Q6xQS8QaSYDcMh6OIUfdgqXy.jpg',
-    background: 'https://image.tmdb.org/t/p/w1280/fuvkyg
+    background: 'https://image.tmdb.org/t/p/w1280/fuvkygOr5GQFL0FeZLoWXh2hNd2.jpg'
+  },
+  'justice league': {
+    poster: 'https://image.tmdb.org/t/p/w500/9rtrRGeRnL0JKtu9IMBWsmlmmZz.jpg',
+    background: 'https://image.tmdb.org/t/p/w1280/9BBTo63ANSmhC4e6r62OJFuK2GL.jpg'
+  },
+  'batman v superman': {
+    poster: 'https://image.tmdb.org/t/p/w500/5UsK3grJvtQrtzEgqNlDljJW96w.jpg',
+    background: 'https://image.tmdb.org/t/p/w1280/6iUNJZymJBMXXriQrc7
