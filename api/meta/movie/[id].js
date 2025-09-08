@@ -4,6 +4,20 @@ const { REAL_DEBRID_API_KEY } = process.env;
 const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
 const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
 
+// Use a try-catch for TMDB require
+let tmdbImageFinder;
+try {
+  tmdbImageFinder = require('../utils/tmdbImageFinder');
+} catch (error) {
+  console.warn('TMDB image finder not available, using fallback images');
+  tmdbImageFinder = {
+    findTmdbPoster: () => null,
+    findTmdbBackground: () => null,
+    isTvShow: () => false,
+    cleanTitle: (title) => title
+  };
+}
+
 module.exports = async (req, res) => {
   try {
     const id = req.query.id;
@@ -37,12 +51,8 @@ module.exports = async (req, res) => {
       originalFilename = decodeURIComponent(originalFilename);
     }
 
-    // DEBUG: Check what the ID starts with
-    console.log('ID starts with:', id.substring(0, 10));
-    
-    // Check if this is UFC content - BETTER DETECTION
+    // Check if this is UFC content
     const isUfc = id.startsWith('rd_ufc_');
-    console.log('Is UFC content:', isUfc, 'Full ID:', id);
     
     // Create display title
     let displayTitle = originalFilename
@@ -51,39 +61,42 @@ module.exports = async (req, res) => {
       .replace(/_/g, ' ')
       .trim();
 
-    // Get appropriate image - FORCE UFC LOGO FOR TESTING
+    // Get appropriate images
     let poster, background;
     
     if (isUfc) {
       // Use UFC-specific images
       poster = ufcLogo;
       background = ufcBackground;
-      console.log('USING UFC LOGO:', ufcLogo);
     } else {
-      // Use generic images for non-UFC content
-      poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
-      background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
-      console.log('Using text image for non-UFC content');
+      // Use TMDB for non-UFC content
+      const isTvShow = tmdbImageFinder.isTvShow(displayTitle);
+      const cleanTitle = tmdbImageFinder.cleanTitle(displayTitle);
+      
+      // Try to get TMDB poster
+      const tmdbPoster = await tmdbImageFinder.findTmdbPoster(cleanTitle, !isTvShow);
+      const tmdbBackground = await tmdbImageFinder.findTmdbBackground(cleanTitle, !isTvShow);
+      
+      poster = tmdbPoster || `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
+      background = tmdbBackground || `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
     }
 
-    // Create proper meta response with debug info
+    // Determine type (movie or series)
+    const type = tmdbImageFinder.isTvShow(displayTitle) ? 'series' : 'movie';
+    const genres = isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'];
+
+    // Create proper meta response
     const meta = {
       id: id,
-      type: 'movie',
+      type: type,
       name: displayTitle,
       poster: poster,
       posterShape: 'regular',
       description: `Content from your Real-Debrid cloud: ${displayTitle}`,
       background: background,
-      genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'],
+      genres: genres,
       runtime: '120 min',
       year: new Date().getFullYear().toString(),
-      // Debug info
-      _debug: {
-        isUfc: isUfc,
-        idPrefix: id.substring(0, 10),
-        originalFilename: originalFilename
-      },
       videos: [
         {
           id: id + '_video',
@@ -94,7 +107,7 @@ module.exports = async (req, res) => {
       ]
     };
 
-    console.log('Returning meta. UFC:', isUfc, 'Poster:', poster);
+    console.log('Returning meta for:', displayTitle, 'Type:', type, 'Poster:', poster);
     res.json({ meta: meta });
   } catch (error) {
     console.error('Error in meta handler:', error);
