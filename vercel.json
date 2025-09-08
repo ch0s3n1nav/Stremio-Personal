@@ -4,22 +4,58 @@
     {
       "src": "api/index.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/utils/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/manifest.json",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/configure",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/catalog/movie/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/meta/movie/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/stream/movie/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/debug-env",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/test-tmdb-simple",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/test-tmdb-direct",
+      "dest": "/api/index.js"
+    },
     {
       "src": "/(.*)",
       "dest": "/api/index.js"
     }
   ],
-  "env": {
-    "REAL_DEBRID_API_KEY": "VYESHZI4D3BF3DLJ6W4242ZTCCSR3RVSFWTGKTVRTOQ223LDRI6A",
-    "TMDB_API_KEY": "8d6b19dfd39b5efe48ed79708a6850b3"
-  },
   "functions": {
     "api/index.js": {
       "maxDuration": 30,
       "memory": 1024
     }
+  },
+  "env": {
+    "REAL_DEBRID_API_KEY": "VYESHZI4D3BF3DLJ6W4242ZTCCSR3RVSFWTGKTVRTOQ223LDRI6A",
+    "TMDB_API_KEY": "8d6b19dfd39b5efe48ed79708a6850b3"
   }
 }
