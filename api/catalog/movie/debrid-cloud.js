@@ -1,5 +1,8 @@
 const { REAL_DEBRID_API_KEY } = process.env;
 
+// UFC portrait poster for catalog view
+const ufcPortraitPoster = 'https://i.imgur.com/GkrHvhe.jpeg';
+
 module.exports = async (req, res) => {
   try {
     console.log('All Cloud Movies endpoint called');
@@ -54,17 +57,20 @@ module.exports = async (req, res) => {
           .replace(/_/g, ' ')
           .trim();
         
+        // Check if this is UFC content
+        const isUfc = (originalFilename || '').toLowerCase().includes('ufc');
+        
         // Create ID with REAL torrent ID AND original filename for meta handler
-        const id = `rd_movie_${torrent.id}_${encodeURIComponent(originalFilename)}`;
+        const id = isUfc ? `rd_ufc_${torrent.id}_${encodeURIComponent(originalFilename)}` : `rd_movie_${torrent.id}_${encodeURIComponent(originalFilename)}`;
         
         return {
           id: id,
           type: 'movie',
           name: displayTitle,
-          poster: `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`,
-          posterShape: 'poster',
+          poster: isUfc ? ufcPortraitPoster : `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=600&height=900`,
+          posterShape: 'regular',
           description: `From your Real-Debrid cloud: ${displayTitle}`,
-          genres: ['Real-Debrid', 'Cloud']
+          genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud']
         };
       });
 
