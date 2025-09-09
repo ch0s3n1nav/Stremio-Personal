@@ -1,19 +1,13 @@
 const { TMDB_API_KEY } = process.env;
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
-// TMDB search function
 async function searchTMDB(title, year = null) {
   try {
     if (!TMDB_API_KEY) return null;
-
-    let searchQuery = title;
-    let searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(searchQuery)}`;
-    
+    let searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`;
     if (year) searchUrl += `&year=${year}`;
-    
     const response = await fetch(searchUrl);
     if (!response.ok) return null;
-    
     const data = await response.json();
     return data.results?.[0] || null;
   } catch (error) {
@@ -21,7 +15,6 @@ async function searchTMDB(title, year = null) {
   }
 }
 
-// Extract year from filename
 function extractYear(title) {
   const yearMatch = title.match(/(19|20)\d{2}/);
   return yearMatch ? yearMatch[0] : null;
@@ -56,14 +49,14 @@ module.exports = async (req, res) => {
       .trim();
 
     const year = extractYear(displayTitle);
-    let poster, background;
+    let poster, background, logo;
 
     if (isUfc) {
       // UFC content - use your custom images
-      poster = 'https://i.imgur.com/Hz4oI65.png'; // UFC logo
-      background = 'https://i.imgur.com/GkrHvhe.jpeg'; // Your portrait image
+      poster = 'https://i.imgur.com/Hz4oI65.png'; // Front page icon
+      background = 'https://i.imgur.com/GkrHvhe.jpeg'; // Detail page background
+      logo = 'https://i.imgur.com/Hz4oI65.png'; // This should show in detail view instead of "Nav's Cloud Stream"
     } else {
-      // Movie content - try TMDB
       const movieName = displayTitle.replace(/(19|20)\d{2}.*$/, '').trim();
       const tmdbResult = await searchTMDB(movieName, year);
       
@@ -75,7 +68,6 @@ module.exports = async (req, res) => {
         }
       }
       
-      // Fallback to text images
       if (!poster) poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
       if (!background) background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
     }
@@ -86,10 +78,11 @@ module.exports = async (req, res) => {
       name: displayTitle,
       poster: poster,
       posterShape: "regular",
-      description: `Content from Nav's Cloud: ${displayTitle}`,
+      description: `UFC Event: ${displayTitle}`,
       background: background,
+      logo: logo,
       genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'],
-      runtime: isUfc ? "180 min" : "120 min", // Longer runtime for UFC events
+      runtime: isUfc ? "180 min" : "120 min",
       year: year || "2023"
     };
 
@@ -100,10 +93,12 @@ module.exports = async (req, res) => {
       meta: {
         id: req.query.id || 'unknown',
         type: 'movie',
-        name: 'Nav\'s Cloud Content',
-        poster: 'https://img.real-debrid.com/?text=Nav%27s+Cloud&width=300&height=450',
+        name: 'UFC Event',
+        poster: 'https://i.imgur.com/Hz4oI65.png',
         posterShape: 'regular',
-        description: 'Content from Nav\'s Real-Debrid cloud storage'
+        description: 'UFC Event',
+        background: 'https://i.imgur.com/GkrHvhe.jpeg',
+        logo: 'https://i.imgur.com/Hz4oI65.png'
       }
     });
   }
