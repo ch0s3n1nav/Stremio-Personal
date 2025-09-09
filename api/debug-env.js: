@@ -1,1 +1,12 @@
 
+const { REAL_DEBRID_API_KEY, TMDB_API_KEY } = process.env;
+
+module.exports = async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.json({
+    REAL_DEBRID_API_KEY: REAL_DEBRID_API_KEY ? "SET" : "NOT SET",
+    TMDB_API_KEY: TMDB_API_KEY ? "SET" : "NOT SET",
+    NODE_ENV: process.env.NODE_ENV || "development"
+  });
+};
