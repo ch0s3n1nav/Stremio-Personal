@@ -2,7 +2,7 @@ const { REAL_DEBRID_API_KEY, TMDB_API_KEY } = process.env;
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
-// TMDB search function - FIXED VERSION
+// TMDB search function
 async function searchTMDB(title, year = null, isMovie = true) {
   try {
     console.log('Searching TMDB for original title:', title, 'Year:', year);
@@ -70,6 +70,10 @@ function extractMovieName(title) {
   const match = title.match(/^([^0-9]+)/);
   return match ? match[0].trim() : title;
 }
+
+// UFC images
+const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
+const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
 
 module.exports = async (req, res) => {
   // Set CORS headers
@@ -213,21 +217,55 @@ function handleCatalog(req, res, catalogType) {
   if (catalogType === 'debrid-cloud') {
     metas = [
       {
-        id: "rd_movie_ABC123_TestMovie.mkv",
+        id: "rd_movie_ABC123_Inception.2010.4K.HDR.DV.2160p.BDRemux Ita Eng x265-NAHOM.mkv",
         type: "movie",
-        name: "Test Movie from Debrid Cloud",
-        poster: "https://img.real-debrid.com/?text=Debrid+Cloud&width=300&height=450",
-        posterShape: "regular"
+        name: "Inception (2010)",
+        poster: "https://image.tmdb.org/t/p/w500/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg",
+        posterShape: "regular",
+        background: "https://image.tmdb.org/t/p/w1280/gqby0RhyehP3uRrzmdyUZ0CgPPe.jpg"
+      },
+      {
+        id: "rd_movie_DEF456_The.Dark.Knight.2008.1080p.BluRay.x264.mkv",
+        type: "movie",
+        name: "The Dark Knight (2008)",
+        poster: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+        posterShape: "regular",
+        background: "https://image.tmdb.org/t/p/w1280/hqkIcbrOHL86UncnHIsHVcVmzue.jpg"
+      },
+      {
+        id: "rd_movie_GHI789_Avengers.Endgame.2019.2160p.UHD.BluRay.x265.mkv",
+        type: "movie",
+        name: "Avengers: Endgame (2019)",
+        poster: "https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
+        posterShape: "regular",
+        background: "https://image.tmdb.org/t/p/w1280/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg"
       }
     ];
   } else if (catalogType === 'ufc-events') {
     metas = [
       {
-        id: "rd_ufc_UFC123_TestUFC.mkv",
+        id: "rd_ufc_001_UFC.300.mkv",
         type: "movie",
-        name: "Test UFC Event",
-        poster: "https://i.imgur.com/Hz4oI65.png",
-        posterShape: "regular"
+        name: "UFC 300: Historic Event",
+        poster: ufcLogo,
+        posterShape: "regular",
+        background: ufcBackground
+      },
+      {
+        id: "rd_ufc_002_UFC.299.mkv",
+        type: "movie",
+        name: "UFC 299: O'Malley vs Vera 2",
+        poster: ufcLogo,
+        posterShape: "regular",
+        background: ufcBackground
+      },
+      {
+        id: "rd_ufc_003_UFC.298.mkv",
+        type: "movie",
+        name: "UFC 298: Volkanovski vs Topuria",
+        poster: ufcLogo,
+        posterShape: "regular",
+        background: ufcBackground
       }
     ];
   }
@@ -282,9 +320,9 @@ async function handleMeta(req, res, pathname) {
     let poster, background;
     
     if (isUfc) {
-      // UFC content
-      poster = 'https://i.imgur.com/Hz4oI65.png';
-      background = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
+      // UFC content - use UFC images
+      poster = ufcLogo;
+      background = ufcBackground;
       console.log('Using UFC images');
     } else {
       console.log('Processing movie content, trying TMDB...');
