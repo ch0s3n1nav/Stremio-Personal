@@ -2,26 +2,34 @@ const { REAL_DEBRID_API_KEY, TMDB_API_KEY } = process.env;
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
-// TMDB search function
+// TMDB search function - FIXED VERSION
 async function searchTMDB(title, year = null, isMovie = true) {
   try {
-    console.log('Searching TMDB for:', title, 'Year:', year);
+    console.log('Searching TMDB for original title:', title, 'Year:', year);
     
     if (!TMDB_API_KEY) {
       console.log('TMDB_API_KEY not available');
       return null;
     }
 
-    // Clean the title for better search results
+    // SIMPLIFIED title cleaning - extract just the movie name
     let cleanTitle = title
-      .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
-      .replace(/\b(1080p|720p|480p|2160p|4k|hdr|dv|uhd|bluray|remux|bdrip|webrip|webdl|hdtv|dvdrip|brrip)\b/gi, '')
-      .replace(/\b(x264|x265|hevc|avc|aac|ac3|dts|ddp5\.1|atmos|ita|eng|fre|ger|spa|sub|multi)\b/gi, '')
-      .replace(/\[.*?\]|\(.*?\)/g, '')
+      // Remove everything after the year to get just the movie name
+      .replace(/(19|20)\d{2}.*$/, '')
+      // Remove any remaining special characters and extra spaces
+      .replace(/[^\w\s]|_/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
     console.log('TMDB cleaned title:', cleanTitle);
+    
+    // If we have a very long title, take only the first few words
+    const words = cleanTitle.split(' ');
+    if (words.length > 3) {
+      cleanTitle = words.slice(0, 3).join(' ');
+    }
+    
+    console.log('Final TMDB search query:', cleanTitle);
     
     let searchUrl = `https://api.themoviedb.org/3/search/${isMovie ? 'movie' : 'tv'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}`;
     
@@ -31,7 +39,12 @@ async function searchTMDB(title, year = null, isMovie = true) {
     
     console.log('TMDB search URL:', searchUrl);
     
-    const response = await fetch(searchUrl);
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const response = await fetch(searchUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       console.log('TMDB API failed:', response.status, response.statusText);
@@ -42,7 +55,7 @@ async function searchTMDB(title, year = null, isMovie = true) {
     
     if (data.results && data.results.length > 0) {
       const firstResult = data.results[0];
-      console.log('TMDB found result:', firstResult.title || firstResult.name);
+      console.log('TMDB found result:', firstResult.title, 'ID:', firstResult.id);
       return firstResult;
     }
     
@@ -50,7 +63,11 @@ async function searchTMDB(title, year = null, isMovie = true) {
     return null;
     
   } catch (error) {
-    console.log('TMDB search error:', error.message);
+    if (error.name === 'AbortError') {
+      console.log('TMDB search timed out after 5 seconds');
+    } else {
+      console.log('TMDB search error:', error.message);
+    }
     return null;
   }
 }
@@ -59,6 +76,21 @@ async function searchTMDB(title, year = null, isMovie = true) {
 function extractYear(title) {
   const yearMatch = title.match(/(19|20)\d{2}/);
   return yearMatch ? yearMatch[0] : null;
+}
+
+// Extract clean movie name from filename
+function extractMovieName(title) {
+  // Remove everything after the year
+  let cleanName = title.replace(/(19|20)\d{2}.*$/, '');
+  // Remove any file extensions and technical terms
+  cleanName = cleanName
+    .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
+    .replace(/\./g, ' ')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  return cleanName;
 }
 
 module.exports = async (req, res) => {
@@ -95,6 +127,8 @@ module.exports = async (req, res) => {
       return handleTestTmdbSimple(req, res);
     } else if (pathname === '/test-tmdb-direct') {
       return handleTestTmdbDirect(req, res);
+    } else if (pathname === '/test-tmdb-inception') {
+      return handleTestTmdbInception(req, res);
     } else if (pathname === '/') {
       return handleRoot(req, res);
     } else {
@@ -110,7 +144,8 @@ module.exports = async (req, res) => {
           '/stream/movie/{id}.json',
           '/debug-env',
           '/test-tmdb-simple',
-          '/test-tmdb-direct'
+          '/test-tmdb-direct',
+          '/test-tmdb-inception'
         ]
       });
     }
@@ -138,7 +173,8 @@ function handleRoot(req, res) {
       debug: '/debug-env',
       tests: [
         '/test-tmdb-simple',
-        '/test-tmdb-direct'
+        '/test-tmdb-direct',
+        '/test-tmdb-inception'
       ]
     }
   });
@@ -260,6 +296,10 @@ async function handleMeta(req, res, pathname) {
     const year = extractYear(displayTitle);
     console.log('Extracted year:', year);
 
+    // Extract clean movie name for TMDB search
+    const movieName = extractMovieName(displayTitle);
+    console.log('Clean movie name for TMDB:', movieName);
+
     // Get images - try TMDB first, fallback to text images
     let poster, background;
     
@@ -271,11 +311,8 @@ async function handleMeta(req, res, pathname) {
     } else {
       console.log('Processing movie content, trying TMDB...');
       
-      // Try to find movie on TMDB
-      const searchTitle = displayTitle.replace(/\b(4k|hdr|dv|2160p|remux|ita|eng|x265)\b/gi, '').trim();
-      console.log('Search title for TMDB:', searchTitle);
-      
-      const tmdbResult = await searchTMDB(searchTitle, year, true);
+      // Try to find movie on TMDB using the clean movie name
+      const tmdbResult = await searchTMDB(movieName, year, true);
       
       if (tmdbResult) {
         console.log('TMDB result found:', tmdbResult.title);
@@ -286,7 +323,7 @@ async function handleMeta(req, res, pathname) {
           poster;
         
         // Use TMDB title if we found a good match
-        if (tmdbResult.title && tmdbResult.title !== searchTitle) {
+        if (tmdbResult.title) {
           displayTitle = tmdbResult.title;
           if (tmdbResult.release_date) {
             displayTitle += ` (${tmdbResult.release_date.substring(0, 4)})`;
@@ -417,6 +454,43 @@ async function handleTestTmdbDirect(req, res) {
       success: true,
       movieTitle: data.results && data.results.length > 0 ? data.results[0].title : "No results",
       resultsCount: data.results ? data.results.length : 0,
+      apiKey: `${TMDB_API_KEY.substring(0, 6)}...`,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      apiKey: TMDB_API_KEY ? `${TMDB_API_KEY.substring(0, 6)}...` : "NOT SET"
+    });
+  }
+}
+
+async function handleTestTmdbInception(req, res) {
+  try {
+    if (!TMDB_API_KEY) {
+      return res.status(500).json({ error: "TMDB_API_KEY not configured" });
+    }
+
+    // Test the exact search we're trying to do
+    const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=Inception&year=2010`;
+    
+    console.log('Testing TMDB Inception search:', searchUrl);
+    
+    const response = await fetch(searchUrl);
+    
+    if (!response.ok) {
+      throw new Error(`TMDB API responded with ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    res.json({
+      success: true,
+      searchQuery: "Inception",
+      year: 2010,
+      resultsCount: data.results ? data.results.length : 0,
+      results: data.results ? data.results.slice(0, 3).map(r => ({ title: r.title, id: r.id })) : [],
       apiKey: `${TMDB_API_KEY.substring(0, 6)}...`,
       timestamp: new Date().toISOString()
     });
