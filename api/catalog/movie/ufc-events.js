@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   }
 
   const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
-  const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
+  const ufcBackground = 'https://i.imgur.com/GkrHvhe.jpeg'; // Updated to your portrait image
 
   const metas = [
     {
@@ -18,11 +18,11 @@ module.exports = async (req, res) => {
       name: "UFC 300: Historic Event",
       poster: ufcLogo,
       posterShape: "regular",
-      background: ufcBackground
+      background: ufcBackground // This will show as the front page image
     },
     {
       id: "rd_ufc_002_UFC.299.mkv",
-      type: "movie",
+      type: "movie", 
       name: "UFC 299: O'Malley vs Vera 2",
       poster: ufcLogo,
       posterShape: "regular",
