@@ -1,0 +1,23 @@
+{
+  "id": "com.stremio.navscloud",
+  "version": "1.0.0",
+  "name": "Nav's Cloud Streamer",
+  "description": "Stream content from your Real-Debrid cloud with Nav's custom addon",
+  "logo": "https://i.imgur.com/Hz4oI65.png",
+  "background": "https://img.real-debrid.com/?text=Nav%27s+Cloud&width=800&height=450",
+  "types": ["movie"],
+  "catalogs": [
+    {
+      "type": "movie",
+      "id": "debrid-cloud",
+      "name": "Nav's Debrid Cloud"
+    },
+    {
+      "type": "movie",
+      "id": "ufc-events",
+      "name": "Nav's UFC Events"
+    }
+  ],
+  "resources": ["catalog", "meta", "stream"],
+  "idPrefixes": ["rd_"]
+}
