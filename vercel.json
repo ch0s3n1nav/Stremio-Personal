@@ -2,14 +2,54 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.js",
+      "src": "api/manifest.json",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "/api/index.js"
+      "src": "/manifest.json",
+      "dest": "/api/manifest.json"
+    },
+    {
+      "src": "/configure",
+      "dest": "/api/configure.js"
+    },
+    {
+      "src": "/catalog/movie/debrid-cloud.json",
+      "dest": "/api/catalog/movie/debrid-cloud.js"
+    },
+    {
+      "src": "/catalog/movie/ufc-events.json",
+      "dest": "/api/catalog/movie/ufc-events.js"
+    },
+    {
+      "src": "/meta/movie/(.*).json",
+      "dest": "/api/meta/movie/[id].js?id=$1"
+    },
+    {
+      "src": "/stream/movie/(.*).json",
+      "dest": "/api/stream/movie/[id].js?id=$1"
+    },
+    {
+      "src": "/test-player",
+      "dest": "/api/test-player.js"
+    },
+    {
+      "src": "/debug-env",
+      "dest": "/api/debug-env.js"
+    },
+    {
+      "src": "/test-tmdb-simple",
+      "dest": "/api/test-tmdb-simple.js"
+    },
+    {
+      "src": "/test-tmdb-direct",
+      "dest": "/api/test-tmdb-direct.js"
     }
   ],
   "env": {
