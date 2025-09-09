@@ -59,9 +59,11 @@ module.exports = async (req, res) => {
     let poster, background;
 
     if (isUfc) {
-      poster = 'https://i.imgur.com/Hz4oI65.png';
-      background = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
+      // UFC content - use your custom images
+      poster = 'https://i.imgur.com/Hz4oI65.png'; // UFC logo
+      background = 'https://i.imgur.com/GkrHvhe.jpeg'; // Your portrait image
     } else {
+      // Movie content - try TMDB
       const movieName = displayTitle.replace(/(19|20)\d{2}.*$/, '').trim();
       const tmdbResult = await searchTMDB(movieName, year);
       
@@ -73,6 +75,7 @@ module.exports = async (req, res) => {
         }
       }
       
+      // Fallback to text images
       if (!poster) poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
       if (!background) background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
     }
@@ -86,7 +89,7 @@ module.exports = async (req, res) => {
       description: `Content from Nav's Cloud: ${displayTitle}`,
       background: background,
       genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'],
-      runtime: "120 min",
+      runtime: isUfc ? "180 min" : "120 min", // Longer runtime for UFC events
       year: year || "2023"
     };
 
