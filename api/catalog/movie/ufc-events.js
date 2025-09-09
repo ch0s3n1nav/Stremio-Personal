@@ -10,16 +10,14 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const ufcLogo = 'https://i.imgur.com/Hz4oI65.png'; // This will show on front page
-  const ufcBackground = 'https://i.imgur.com/GkrHvhe.jpeg'; // This will show when clicked
+  const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
+  const ufcBackground = 'https://i.imgur.com/GkrHvhe.jpeg';
 
   try {
     if (!REAL_DEBRID_API_KEY) {
-      console.error('Real-Debrid API key not configured');
       return res.json({ metas: [] });
     }
 
-    // Fetch all torrents from Real-Debrid
     const response = await fetch('https://api.real-debrid.com/rest/1.0/torrents', {
       headers: {
         'Authorization': `Bearer ${REAL_DEBRID_API_KEY}`
@@ -27,23 +25,17 @@ module.exports = async (req, res) => {
     });
 
     if (!response.ok) {
-      console.error('Failed to fetch torrents from Real-Debrid');
       return res.json({ metas: [] });
     }
 
     const torrents = await response.json();
     
-    // Filter for UFC events
     const ufcMetas = torrents
       .filter(torrent => {
         const filename = (torrent.filename || '').toLowerCase();
         return (
           torrent.status === 'downloaded' && 
-          (filename.includes('ufc') || 
-           filename.includes('mma') || 
-           filename.includes('fight') ||
-           filename.includes('ppv') ||
-           filename.match(/ufc[\._\s]*\d+/i))
+          (filename.includes('ufc') || filename.includes('mma') || filename.includes('fight'))
         );
       })
       .slice(0, 50)
@@ -55,7 +47,6 @@ module.exports = async (req, res) => {
           .replace(/_/g, ' ')
           .trim();
 
-        // Extract event number for better naming
         let eventName = displayName;
         const ufcMatch = displayName.match(/(ufc[\._\s]*\d+)/i);
         if (ufcMatch) {
@@ -66,15 +57,14 @@ module.exports = async (req, res) => {
           id: `rd_ufc_${torrent.id}_${filename}`,
           type: "movie",
           name: eventName,
-          poster: ufcLogo, // This shows on front page grid
+          poster: ufcLogo, // Front page icon
           posterShape: "regular",
-          background: ufcBackground // This shows when clicked into details
+          background: ufcBackground, // Detail page background
+          logo: ufcLogo // This should show in detail view
         };
       });
 
-    // If no UFC events found, provide some default ones
     if (ufcMetas.length === 0) {
-      console.log('No UFC events found in Real-Debrid, showing sample events');
       ufcMetas.push(
         {
           id: "rd_ufc_sample_001_UFC.300.mkv",
@@ -82,15 +72,8 @@ module.exports = async (req, res) => {
           name: "UFC 300",
           poster: ufcLogo,
           posterShape: "regular",
-          background: ufcBackground
-        },
-        {
-          id: "rd_ufc_sample_002_UFC.299.mkv",
-          type: "movie",
-          name: "UFC 299",
-          poster: ufcLogo,
-          posterShape: "regular",
-          background: ufcBackground
+          background: ufcBackground,
+          logo: ufcLogo
         }
       );
     }
@@ -98,24 +81,16 @@ module.exports = async (req, res) => {
     res.json({ metas: ufcMetas });
     
   } catch (error) {
-    console.error('Error in UFC catalog:', error);
     res.json({
       metas: [
         {
-          id: "rd_ufc_error_001_UFC.300.mkv",
+          id: "rd_ufc_001_UFC.300.mkv",
           type: "movie",
           name: "UFC 300",
           poster: ufcLogo,
           posterShape: "regular",
-          background: ufcBackground
-        },
-        {
-          id: "rd_ufc_error_002_UFC.299.mkv", 
-          type: "movie",
-          name: "UFC 299",
-          poster: ufcLogo,
-          posterShape: "regular",
-          background: ufcBackground
+          background: ufcBackground,
+          logo: ufcLogo
         }
       ]
     });
