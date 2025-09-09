@@ -12,26 +12,12 @@ async function searchTMDB(title, year = null, isMovie = true) {
       return null;
     }
 
-    // SIMPLIFIED title cleaning - extract just the movie name
-    let cleanTitle = title
-      // Remove everything after the year to get just the movie name
-      .replace(/(19|20)\d{2}.*$/, '')
-      // Remove any remaining special characters and extra spaces
-      .replace(/[^\w\s]|_/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    console.log('TMDB cleaned title:', cleanTitle);
+    // SIMPLIFIED: Just use the title as-is, let TMDB handle the search
+    let searchQuery = title;
     
-    // If we have a very long title, take only the first few words
-    const words = cleanTitle.split(' ');
-    if (words.length > 3) {
-      cleanTitle = words.slice(0, 3).join(' ');
-    }
+    console.log('Final TMDB search query:', searchQuery);
     
-    console.log('Final TMDB search query:', cleanTitle);
-    
-    let searchUrl = `https://api.themoviedb.org/3/search/${isMovie ? 'movie' : 'tv'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}`;
+    let searchUrl = `https://api.themoviedb.org/3/search/${isMovie ? 'movie' : 'tv'}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(searchQuery)}`;
     
     if (year) {
       searchUrl += `&year=${year}`;
@@ -80,17 +66,9 @@ function extractYear(title) {
 
 // Extract clean movie name from filename
 function extractMovieName(title) {
-  // Remove everything after the year
-  let cleanName = title.replace(/(19|20)\d{2}.*$/, '');
-  // Remove any file extensions and technical terms
-  cleanName = cleanName
-    .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
-    .replace(/\./g, ' ')
-    .replace(/_/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  return cleanName;
+  // Extract just the movie name part (before the year)
+  const match = title.match(/^([^0-9]+)/);
+  return match ? match[0].trim() : title;
 }
 
 module.exports = async (req, res) => {
@@ -296,7 +274,7 @@ async function handleMeta(req, res, pathname) {
     const year = extractYear(displayTitle);
     console.log('Extracted year:', year);
 
-    // Extract clean movie name for TMDB search
+    // Extract clean movie name for TMDB search (just the part before the year)
     const movieName = extractMovieName(displayTitle);
     console.log('Clean movie name for TMDB:', movieName);
 
