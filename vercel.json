@@ -4,10 +4,6 @@
     {
       "src": "api/index.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "api/utils/*.js",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -48,12 +44,6 @@
       "dest": "/api/index.js"
     }
   ],
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
   "env": {
     "REAL_DEBRID_API_KEY": "VYESHZI4D3BF3DLJ6W4242ZTCCSR3RVSFWTGKTVRTOQ223LDRI6A",
     "TMDB_API_KEY": "8d6b19dfd39b5efe48ed79708a6850b3"
