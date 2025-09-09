@@ -10,8 +10,8 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
-  const ufcBackground = 'https://i.imgur.com/GkrHvhe.jpeg';
+  const ufcLogo = 'https://i.imgur.com/Hz4oI65.png'; // This will show on front page
+  const ufcBackground = 'https://i.imgur.com/GkrHvhe.jpeg'; // This will show when clicked
 
   try {
     if (!REAL_DEBRID_API_KEY) {
@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
 
     const torrents = await response.json();
     
-    // Filter for UFC events (filenames containing UFC, MMA, fight, etc.)
+    // Filter for UFC events
     const ufcMetas = torrents
       .filter(torrent => {
         const filename = (torrent.filename || '').toLowerCase();
@@ -43,10 +43,10 @@ module.exports = async (req, res) => {
            filename.includes('mma') || 
            filename.includes('fight') ||
            filename.includes('ppv') ||
-           filename.match(/ufc[\._\s]*\d+/i)) // Match UFC 300, UFC.300, UFC_300
+           filename.match(/ufc[\._\s]*\d+/i))
         );
       })
-      .slice(0, 50) // Limit to 50 UFC events
+      .slice(0, 50)
       .map(torrent => {
         const filename = torrent.filename || 'UFC Event';
         const displayName = filename
@@ -66,9 +66,9 @@ module.exports = async (req, res) => {
           id: `rd_ufc_${torrent.id}_${filename}`,
           type: "movie",
           name: eventName,
-          poster: ufcLogo,
+          poster: ufcLogo, // This shows on front page grid
           posterShape: "regular",
-          background: ufcBackground
+          background: ufcBackground // This shows when clicked into details
         };
       });
 
@@ -99,7 +99,6 @@ module.exports = async (req, res) => {
     
   } catch (error) {
     console.error('Error in UFC catalog:', error);
-    // Fallback to sample UFC events on error
     res.json({
       metas: [
         {
