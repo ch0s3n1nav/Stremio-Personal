@@ -1,19 +1,5 @@
 const { REAL_DEBRID_API_KEY, TMDB_API_KEY } = process.env;
 
-// Import your utils
-const imageFinder = require('./utils/imageFinder');
-const tmdbImageFinder = require('./utils/tmdbImageFinder');
-const ufcImageFinder = require('./utils/ufcImageFinder');
-
-// Add global error handler for uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
 module.exports = async (req, res) => {
   // Set CORS headers
   res.setHeader('Content-Type', 'application/json');
@@ -25,126 +11,224 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
-  
-  console.log('Request received:', pathname);
+  const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`);
+  console.log('Request received:', req.method, pathname);
   
   try {
-    // Route requests
+    // Route requests based on pathname
     if (pathname === '/manifest.json') {
-      return await handleManifest(req, res);
+      return handleManifest(req, res);
     } else if (pathname === '/configure') {
-      return await handleConfigure(req, res);
-    } else if (pathname.startsWith('/catalog/movie/')) {
-      return await handleCatalog(req, res, pathname);
+      return handleConfigure(req, res);
+    } else if (pathname === '/catalog/movie/debrid-cloud.json') {
+      return handleCatalog(req, res, 'debrid-cloud');
+    } else if (pathname === '/catalog/movie/ufc-events.json') {
+      return handleCatalog(req, res, 'ufc-events');
     } else if (pathname.startsWith('/meta/movie/')) {
-      return await handleMeta(req, res, pathname);
+      return handleMeta(req, res, pathname);
     } else if (pathname.startsWith('/stream/movie/')) {
-      return await handleStream(req, res, pathname);
+      return handleStream(req, res, pathname);
     } else if (pathname === '/debug-env') {
-      return await handleDebugEnv(req, res);
+      return handleDebugEnv(req, res);
     } else if (pathname === '/test-tmdb-simple') {
-      return await handleTestTmdbSimple(req, res);
+      return handleTestTmdbSimple(req, res);
     } else if (pathname === '/test-tmdb-direct') {
-      return await handleTestTmdbDirect(req, res);
+      return handleTestTmdbDirect(req, res);
+    } else if (pathname === '/') {
+      return handleRoot(req, res);
     } else {
-      return res.status(404).json({ error: 'Endpoint not found' });
+      return res.status(404).json({ 
+        error: 'Endpoint not found',
+        path: pathname,
+        availableEndpoints: [
+          '/manifest.json',
+          '/configure',
+          '/catalog/movie/debrid-cloud.json',
+          '/catalog/movie/ufc-events.json',
+          '/meta/movie/{id}.json',
+          '/stream/movie/{id}.json',
+          '/debug-env',
+          '/test-tmdb-simple',
+          '/test-tmdb-direct'
+        ]
+      });
     }
   } catch (error) {
     console.error('API error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'production' ? undefined : error.stack
+      message: error.message
     });
   }
 };
 
-// Handler functions
-async function handleManifest(req, res) {
-  // ... your existing manifest code
-}
-
-async function handleConfigure(req, res) {
-  // ... your existing configure code
-}
-
-async function handleCatalog(req, res, pathname) {
-  // ... your existing catalog code
-}
-
-async function handleMeta(req, res, pathname) {
-  try {
-    console.log('Meta handler called for path:', pathname);
-    
-    // Extract ID from path like /meta/movie/rd_movie_ABC123_TestMovie.mkv.json
-    const id = pathname.split('/').pop().replace('.json', '');
-    console.log('Extracted ID:', id);
-    
-    if (!id) {
-      return res.status(400).json({ error: 'ID parameter is required' });
+function handleRoot(req, res) {
+  res.json({
+    message: 'Stremio Real-Debrid Addon API',
+    endpoints: {
+      manifest: '/manifest.json',
+      configure: '/configure',
+      catalog: [
+        '/catalog/movie/debrid-cloud.json',
+        '/catalog/movie/ufc-events.json'
+      ],
+      meta: '/meta/movie/{id}.json',
+      stream: '/stream/movie/{id}.json',
+      debug: '/debug-env',
+      tests: [
+        '/test-tmdb-simple',
+        '/test-tmdb-direct'
+      ]
     }
+  });
+}
 
-    // Extract filename from ID
-    const parts = id.split('_');
-    console.log('ID parts:', parts);
-    
-    let originalFilename = parts.length >= 4 ? 
-      decodeURIComponent(parts.slice(3).join('_')) : 
-      decodeURIComponent(id.replace(/^rd_(movie|ufc)_/, ''));
-    
-    console.log('Original filename:', originalFilename);
+function handleManifest(req, res) {
+  const manifest = {
+    id: "com.stremio.rdaddon",
+    version: "1.0.0",
+    name: "Real-Debrid Cloud Streamer",
+    description: "Stream content from your Real-Debrid cloud",
+    logo: "https://i.imgur.com/Hz4oI65.png",
+    background: "https://img.real-debrid.com/?text=Real-Debrid&width=800&height=450",
+    types: ["movie"],
+    catalogs: [
+      {
+        type: "movie",
+        id: "debrid-cloud",
+        name: "Real-Debrid Cloud"
+      },
+      {
+        type: "movie",
+        id: "ufc-events",
+        name: "UFC Events"
+      }
+    ],
+    resources: ["catalog", "meta", "stream"],
+    idPrefixes: ["rd_"]
+  };
+  
+  res.json(manifest);
+}
 
-    const isUfc = id.startsWith('rd_ufc_');
-    console.log('Is UFC:', isUfc);
-    
-    // Create display title
-    let displayTitle = originalFilename
-      .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
-      .replace(/\./g, ' ')
-      .replace(/_/g, ' ')
-      .trim();
+function handleConfigure(req, res) {
+  const configure = {
+    type: "configure",
+    name: "Real-Debrid Configuration",
+    description: "Configure your Real-Debrid addon",
+    logo: "https://i.imgur.com/Hz4oI65.png",
+    background: "https://img.real-debrid.com/?text=Real-Debrid&width=800&height=450",
+    types: ["movie"],
+    settings: [
+      {
+        type: "text",
+        key: "realDebridApiKey",
+        title: "Real-Debrid API Key",
+        required: true
+      }
+    ]
+  };
+  
+  res.json(configure);
+}
 
-    console.log('Display title:', displayTitle);
-
-    // Get images
-    let poster, background;
-    
-    if (isUfc) {
-      poster = 'https://i.imgur.com/Hz4oI65.png';
-      background = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
-    } else {
-      // Use text-based images as fallback for now
-      poster = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=300&height=450`;
-      background = `https://img.real-debrid.com/?text=${encodeURIComponent(displayTitle)}&width=800&height=450`;
-    }
-
-    console.log('Poster URL:', poster);
-    console.log('Background URL:', background);
-
-    const meta = {
-      id: id,
-      type: 'movie',
-      name: displayTitle,
-      poster: poster,
-      posterShape: 'regular',
-      description: `Content from your Real-Debrid cloud: ${displayTitle}`,
-      background: background,
-      genres: isUfc ? ['UFC', 'MMA', 'Fighting', 'Sports'] : ['Real-Debrid', 'Cloud'],
-      runtime: '120 min',
-      year: new Date().getFullYear().toString()
-    };
-
-    console.log('Final meta object:', JSON.stringify(meta, null, 2));
-    res.json({ meta: meta });
-    
-  } catch (error) {
-    console.error('Error in meta handler:', error);
-    res.status(500).json({ 
-      error: 'Failed to process meta request',
-      message: error.message 
-    });
+function handleCatalog(req, res, catalogType) {
+  let metas = [];
+  
+  if (catalogType === 'debrid-cloud') {
+    metas = [
+      {
+        id: "rd_movie_ABC123_TestMovie.mkv",
+        type: "movie",
+        name: "Test Movie from Debrid Cloud",
+        poster: "https://img.real-debrid.com/?text=Debrid+Cloud&width=300&height=450",
+        posterShape: "regular"
+      }
+    ];
+  } else if (catalogType === 'ufc-events') {
+    metas = [
+      {
+        id: "rd_ufc_UFC123_TestUFC.mkv",
+        type: "movie",
+        name: "Test UFC Event",
+        poster: "https://i.imgur.com/Hz4oI65.png",
+        posterShape: "regular"
+      }
+    ];
   }
+  
+  res.json({ metas });
 }
 
-// ... other handler functions (stream, debug-env, etc.)
+function handleMeta(req, res, pathname) {
+  // Extract ID from path like /meta/movie/rd_movie_ABC123_TestMovie.mkv.json
+  const id = pathname.split('/').pop().replace('.json', '');
+  
+  // Simple meta response
+  const meta = {
+    id: id,
+    type: "movie",
+    name: id.replace(/^rd_(movie|ufc)_/, '').replace(/\.[^/.]+$/, '').replace(/[._]/g, ' '),
+    poster: "https://img.real-debrid.com/?text=Movie+Poster&width=300&height=450",
+    posterShape: "regular",
+    description: `Content from your Real-Debrid cloud: ${id}`,
+    background: "https://img.real-debrid.com/?text=Background&width=800&height=450",
+    genres: ["Real-Debrid", "Cloud"],
+    runtime: "120 min",
+    year: "2023"
+  };
+
+  res.json({ meta });
+}
+
+function handleStream(req, res, pathname) {
+  // Extract ID from path like /stream/movie/rd_movie_ABC123_TestMovie.mkv.json
+  const id = pathname.split('/').pop().replace('.json', '');
+  
+  // Simple stream response
+  res.json({
+    streams: [
+      {
+        id: `stream_${id}`,
+        title: "Real-Debrid Stream",
+        name: "Real-Debrid",
+        description: "High-quality stream from your Real-Debrid cloud",
+        thumbnail: "https://i.imgur.com/Hz4oI65.png",
+        url: `https://example.com/stream/${id}.mp4`,
+        behaviorHints: {
+          notWebReady: false,
+          bingeGroup: `rd_${id}`
+        }
+      }
+    ]
+  });
+}
+
+function handleDebugEnv(req, res) {
+  res.json({
+    REAL_DEBRID_API_KEY: REAL_DEBRID_API_KEY ? "SET" : "NOT SET",
+    TMDB_API_KEY: TMDB_API_KEY ? "SET" : "NOT SET",
+    TMDB_API_KEY_LENGTH: TMDB_API_KEY ? TMDB_API_KEY.length : 0,
+    TMDB_API_KEY_PREFIX: TMDB_API_KEY ? `${TMDB_API_KEY.substring(0, 6)}...` : "N/A",
+    NODE_ENV: process.env.NODE_ENV || "development",
+    timestamp: new Date().toISOString()
+  });
+}
+
+function handleTestTmdbSimple(req, res) {
+  res.json({
+    success: true,
+    message: "TMDB Simple Test",
+    apiKey: TMDB_API_KEY ? `${TMDB_API_KEY.substring(0, 6)}...` : "NOT SET",
+    timestamp: new Date().toISOString()
+  });
+}
+
+function handleTestTmdbDirect(req, res) {
+  res.json({
+    success: true,
+    message: "TMDB Direct Test",
+    apiKey: TMDB_API_KEY ? `${TMDB_API_KEY.substring(0, 6)}...` : "NOT SET",
+    timestamp: new Date().toISOString()
+  });
+}
