@@ -168,7 +168,7 @@ function handleManifest(req, res) {
     version: "1.0.0",
     name: "Real-Debrid Cloud Streamer",
     description: "Stream content from your Real-Debrid cloud",
-    logo: "https://ibb.co/qL4Zs6zz",
+    logo: "https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png",
     background: "https://img.real-debrid.com/?text=Real-Debrid&width=800&height=450",
     types: ["movie"],
     catalogs: [
@@ -195,7 +195,7 @@ function handleConfigure(req, res) {
     type: "configure",
     name: "Real-Debrid Configuration",
     description: "Configure your Real-Debrid addon",
-    logo: "https://ibb.co/qL4Zs6zz",
+    logo: "https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png",
     background: "https://img.real-debrid.com/?text=Real-Debrid&width=800&height=450",
     types: ["movie"],
     settings: [
@@ -398,7 +398,7 @@ function handleStream(req, res, pathname) {
         title: "Real-Debrid Stream",
         name: "Real-Debrid",
         description: "High-quality stream from your Real-Debrid cloud",
-        thumbnail: "https://ibb.co/qL4Zs6zz",
+        thumbnail: "https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png",
         url: `https://example.com/stream/${id}.mp4`,
         behaviorHints: {
           notWebReady: false,
