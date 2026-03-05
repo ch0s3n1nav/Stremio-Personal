@@ -72,8 +72,8 @@ function extractMovieName(title) {
 }
 
 // UFC images
-const ufcLogo = 'https://ibb.co/qL4Zs6zz';
-const ufcBackground = 'https://ibb.co/qL4Zs6zz';
+const ufcLogo = 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png';
+const ufcBackground = 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg';
 
 module.exports = async (req, res) => {
   // Set CORS headers
