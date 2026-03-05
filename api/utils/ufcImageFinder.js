@@ -1,5 +1,5 @@
 // UFC logo hosted on Imgur - direct image URL
-const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
+const ufcLogo = 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png';
 
 // UFC background - using text-based for reliability
 const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
