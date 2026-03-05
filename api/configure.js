@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
     type: "configure",
     name: "Nav's Cloud Configuration",
     description: "Configure your Real-Debrid addon by Nav",
-    logo: "https://i.imgur.com/Hz4oI65.png",
+    logo: "https://ibb.co/qL4Zs6zz",
     background: "https://img.real-debrid.com/?text=Nav%27s+Cloud&width=800&height=450",
     types: ["movie"],
     settings: [
