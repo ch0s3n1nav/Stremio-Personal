@@ -3,8 +3,8 @@
   "version": "1.3.0",
   "name": "Nav's Cloud Streamer",
   "description": "Stream content from your Real-Debrid cloud with Nav's custom addon",
-  "logo": "https://i.imgur.com/Hz4oI65.png",
-  "background": "https://i.imgur.com/GkrHvhe.jpeg",
+  "logo": "https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png",
+  "background": "https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg",
   "types": ["movie"],
   "catalogs": [
     {
