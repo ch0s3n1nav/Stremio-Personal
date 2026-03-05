@@ -72,8 +72,8 @@ function extractMovieName(title) {
 }
 
 // UFC images
-const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
-const ufcBackground = 'https://img.real-debrid.com/?text=UFC&width=800&height=450&bg=000000&color=FF0000';
+const ufcLogo = 'https://ibb.co/qL4Zs6zz';
+const ufcBackground = 'https://ibb.co/qL4Zs6zz';
 
 module.exports = async (req, res) => {
   // Set CORS headers
@@ -168,7 +168,7 @@ function handleManifest(req, res) {
     version: "1.0.0",
     name: "Real-Debrid Cloud Streamer",
     description: "Stream content from your Real-Debrid cloud",
-    logo: "https://i.imgur.com/Hz4oI65.png",
+    logo: "https://ibb.co/qL4Zs6zz",
     background: "https://img.real-debrid.com/?text=Real-Debrid&width=800&height=450",
     types: ["movie"],
     catalogs: [
@@ -195,7 +195,7 @@ function handleConfigure(req, res) {
     type: "configure",
     name: "Real-Debrid Configuration",
     description: "Configure your Real-Debrid addon",
-    logo: "https://i.imgur.com/Hz4oI65.png",
+    logo: "https://ibb.co/qL4Zs6zz",
     background: "https://img.real-debrid.com/?text=Real-Debrid&width=800&height=450",
     types: ["movie"],
     settings: [
@@ -398,7 +398,7 @@ function handleStream(req, res, pathname) {
         title: "Real-Debrid Stream",
         name: "Real-Debrid",
         description: "High-quality stream from your Real-Debrid cloud",
-        thumbnail: "https://i.imgur.com/Hz4oI65.png",
+        thumbnail: "https://ibb.co/qL4Zs6zz",
         url: `https://example.com/stream/${id}.mp4`,
         behaviorHints: {
           notWebReady: false,
