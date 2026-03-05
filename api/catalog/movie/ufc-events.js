@@ -10,8 +10,8 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const ufcLogo = 'https://i.imgur.com/Hz4oI65.png';
-  const ufcBackground = 'https://i.imgur.com/GkrHvhe.jpeg';
+  const ufcLogo = 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png';
+  const ufcBackground = 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg';
 
   try {
     if (!REAL_DEBRID_API_KEY) {
