@@ -53,9 +53,9 @@ module.exports = async (req, res) => {
 
     if (isUfc) {
       // UFC content - use your custom images
-      poster = 'https://i.imgur.com/Hz4oI65.png'; // Front page icon
-      background = 'https://i.imgur.com/GkrHvhe.jpeg'; // Detail page background
-      logo = 'https://i.imgur.com/Hz4oI65.png'; // This should show in detail view instead of "Nav's Cloud Stream"
+      poster = 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg'; // Front page icon
+      background = 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg'; // Detail page background
+      logo = 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png'; // This should show in detail view instead of "Nav's Cloud Stream"
     } else {
       const movieName = displayTitle.replace(/(19|20)\d{2}.*$/, '').trim();
       const tmdbResult = await searchTMDB(movieName, year);
@@ -94,11 +94,11 @@ module.exports = async (req, res) => {
         id: req.query.id || 'unknown',
         type: 'movie',
         name: 'UFC Event',
-        poster: 'https://i.imgur.com/Hz4oI65.png',
+        poster: 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg',
         posterShape: 'regular',
         description: 'UFC Event',
-        background: 'https://i.imgur.com/GkrHvhe.jpeg',
-        logo: 'https://i.imgur.com/Hz4oI65.png'
+        background: 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg',
+        logo: 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png'
       }
     });
   }
