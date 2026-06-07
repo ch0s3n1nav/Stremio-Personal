@@ -59,56 +59,63 @@ module.exports = async (req, res) => {
       }
     }
 
-    // --- TorBox UFC ---
-    if (TORBOX_API_KEY) {
-      try {
-        const tbResp = await fetch('https://api.torbox.app/v1/api/torrents/mylist', {
-          headers: { 'Authorization': `Bearer ${TORBOX_API_KEY}` }
+   // --- TorBox UFC ---
+if (TORBOX_API_KEY) {
+  try {
+    const tbResp = await fetch('https://api.torbox.app/v1/api/torrents/mylist', {
+      headers: { 'Authorization': `Bearer ${TORBOX_API_KEY}` }
+    });
+
+    if (tbResp.ok) {
+      const json = await tbResp.json();
+      const torrents = Array.isArray(json.data) ? json.data : [];
+
+      const tbUfc = torrents
+        .filter(t => {
+          const rawName =
+            (t.name || '') +
+            ' ' +
+            (t.files?.[0]?.short_name || '') +
+            ' ' +
+            (t.files?.[0]?.name || '');
+
+          const name = rawName.toLowerCase();
+
+          return (
+            t.download_finished &&
+            t.download_present &&
+            (name.includes('ufc') || name.includes('mma') || name.includes('fight'))
+          );
+        })
+        .map(t => {
+          const filename =
+            t.files?.[0]?.short_name ||
+            t.files?.[0]?.name ||
+            t.name ||
+            'UFC Event';
+
+          const displayName = filename
+            .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
+            .replace(/\./g, ' ')
+            .replace(/_/g, ' ')
+            .trim();
+
+          return {
+            id: `tb_ufc_${t.id}_${encodeURIComponent(filename)}`,
+            type: "movie",
+            name: displayName,
+            poster: ufcLogo,
+            posterShape: "regular",
+            background: ufcBackground
+          };
         });
 
-        if (tbResp.ok) {
-          const json = await tbResp.json();
-          const torrents = Array.isArray(json.data) ? json.data : [];
-
-          const tbUfc = torrents
-            .filter(t => {
-              const name = (t.name || '').toLowerCase();
-              return (
-                t.download_finished &&
-                t.download_present &&
-                (name.includes('ufc') || name.includes('mma') || name.includes('fight'))
-              );
-            })
-            .map(t => {
-              const filename = t.files?.[0]?.short_name || t.name || 'UFC Event';
-              const displayName = filename
-                .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
-                .replace(/\./g, ' ')
-                .replace(/_/g, ' ')
-                .trim();
-
-              return {
-                id: `tb_ufc_${t.id}_${encodeURIComponent(filename)}`,
-                type: "movie",
-                name: displayName,
-                poster: ufcLogo,
-                posterShape: "regular",
-                background: ufcBackground
-              };
-            });
-
-          metas.push(...tbUfc);
-        } else {
-          console.error('TorBox UFC fetch failed:', tbResp.status);
-        }
-      } catch (e) {
-        console.error('TorBox UFC error:', e.message);
-      }
+      metas.push(...tbUfc);
+    } else {
+      console.error('TorBox UFC fetch failed:', tbResp.status);
     }
-
-    res.json({ metas });
-  } catch (error) {
-    console.error('UFC catalog fatal error:', error);
-    res.json({ metas: [] });
+  } catch (e) {
+    console.error('TorBox UFC error:', e.message);
   }
-};
+}
+
