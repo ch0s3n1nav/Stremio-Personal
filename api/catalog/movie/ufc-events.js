@@ -16,9 +16,9 @@ module.exports = async (req, res) => {
   const metas = [];
 
   try {
-    // ---------------------------
+    // ---------------------------------------------------------
     // REAL-DEBRID UFC
-    // ---------------------------
+    // ---------------------------------------------------------
     if (REAL_DEBRID_API_KEY) {
       try {
         const rdResp = await fetch('https://api.real-debrid.com/rest/1.0/torrents', {
@@ -61,9 +61,9 @@ module.exports = async (req, res) => {
       }
     }
 
-    // ---------------------------
+    // ---------------------------------------------------------
     // TORBOX UFC
-    // ---------------------------
+    // ---------------------------------------------------------
     if (TORBOX_API_KEY) {
       try {
         const tbResp = await fetch('https://api.torbox.app/v1/api/torrents/mylist', {
@@ -82,6 +82,7 @@ module.exports = async (req, res) => {
 
             const tbUfc = torrents
               .filter(t => {
+                // Combine all possible name fields
                 const rawName =
                   (t.name || '') +
                   ' ' +
@@ -91,9 +92,14 @@ module.exports = async (req, res) => {
 
                 const name = rawName.toLowerCase();
 
+                // TorBox "downloaded" logic
+                const isDownloaded =
+                  t.download_present === true ||
+                  t.progress === 1 ||
+                  t.download_state === "cached";
+
                 return (
-                  t.download_finished &&
-                  t.download_present &&
+                  isDownloaded &&
                   (name.includes('ufc') || name.includes('mma') || name.includes('fight'))
                 );
               })
@@ -112,27 +118,3 @@ module.exports = async (req, res) => {
                   .trim();
 
                 return {
-                  id: `tb_ufc_${t.id}_${encodeURIComponent(filename)}`,
-                  type: "movie",
-                  name: displayName,
-                  poster: ufcLogo,
-                  posterShape: "regular",
-                  background: ufcBackground
-                };
-              });
-
-            metas.push(...tbUfc);
-          }
-        }
-      } catch (e) {
-        console.error("TorBox UFC error:", e.message);
-      }
-    }
-
-    return res.json({ metas });
-
-  } catch (error) {
-    console.error("UFC fatal error:", error);
-    return res.json({ metas: [] });
-  }
-};
