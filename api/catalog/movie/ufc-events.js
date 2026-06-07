@@ -3,12 +3,6 @@ const { REAL_DEBRID_API_KEY, TORBOX_API_KEY } = process.env;
 module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
 
   const ufcLogo = 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png';
   const ufcBackground = 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg';
@@ -16,9 +10,7 @@ module.exports = async (req, res) => {
   const metas = [];
 
   try {
-    // ---------------------------------------------------------
-    // REAL-DEBRID UFC
-    // ---------------------------------------------------------
+    // ---------------- REAL-DEBRID UFC ----------------
     if (REAL_DEBRID_API_KEY) {
       try {
         const rdResp = await fetch('https://api.real-debrid.com/rest/1.0/torrents', {
@@ -57,9 +49,7 @@ module.exports = async (req, res) => {
       }
     }
 
-    // ---------------------------------------------------------
-    // TORBOX UFC (TOKEN-IN-URL MODE)
-    // ---------------------------------------------------------
+    // ---------------- TORBOX UFC ----------------
     if (TORBOX_API_KEY) {
       try {
         const tbResp = await fetch(
@@ -71,32 +61,33 @@ module.exports = async (req, res) => {
         } else {
           const json = await tbResp.json();
 
-          if (!json.success || !Array.isArray(json.data)) {
-            console.error("TorBox UFC returned no data:", json);
-          } else {
-            const torrents = json.data;
-
-            torrents.forEach(t => {
+          if (json.success && Array.isArray(json.data)) {
+            json.data.forEach(t => {
               try {
-                const rawName =
-                  (t.name || '') + ' ' +
-                  (t.files?.[0]?.short_name || '') + ' ' +
-                  (t.files?.[0]?.name || '');
+                const file = t.files?.[0];
 
-                const name = rawName.toLowerCase();
+                const rawName = [
+                  t.name || '',
+                  file?.short_name || '',
+                  file?.name || ''
+                ].join(' ').toLowerCase();
 
                 const isDownloaded =
                   t.download_present === true ||
-                  t.progress === 1 ||
-                  t.download_state === "cached";
+                  Number(t.progress) === 1 ||
+                  String(t.download_state).toLowerCase() === "cached";
 
                 if (!isDownloaded) return;
-                if (!name.includes('ufc') && !name.includes('mma') && !name.includes('fight')) return;
 
-                const file = t.files?.[0];
+                if (
+                  !rawName.includes('ufc') &&
+                  !rawName.includes('fight') &&
+                  !rawName.includes('mma')
+                ) return;
+
                 const filename =
                   file?.short_name ||
-                  file?.name ||
+                  file?.name?.split('/').pop() ||
                   t.name ||
                   'UFC Event';
 
