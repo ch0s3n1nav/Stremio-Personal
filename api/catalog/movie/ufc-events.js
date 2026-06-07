@@ -1,120 +1,120 @@
 const { REAL_DEBRID_API_KEY, TORBOX_API_KEY } = process.env;
 
 module.exports = async (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  const ufcLogo = 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png';
-  const ufcBackground = 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg';
-
-  const metas = [];
-
   try {
-    // ---------------------------------------------------------
-    // REAL-DEBRID UFC
-    // ---------------------------------------------------------
-    if (REAL_DEBRID_API_KEY) {
-      try {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    const ufcLogo = 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png';
+    const ufcBackground = 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg';
+
+    const metas = [];
+
+    // ---------------- RD UFC ----------------
+    try {
+      if (REAL_DEBRID_API_KEY) {
         const rdResp = await fetch('https://api.real-debrid.com/rest/1.0/torrents', {
-          headers: { 'Authorization': `Bearer ${REAL_DEBRID_API_KEY}` }
+          headers: { Authorization: `Bearer ${REAL_DEBRID_API_KEY}` }
         });
 
         if (rdResp.ok) {
           const torrents = await rdResp.json();
 
-          const rdUfc = torrents
+          torrents
             .filter(t => {
               const name = (t.filename || '').toLowerCase();
-              return (
-                t.status === 'downloaded' &&
-                (name.includes('ufc') || name.includes('mma') || name.includes('fight'))
-              );
+              return t.status === 'downloaded' &&
+                (name.includes('ufc') || name.includes('mma') || name.includes('fight'));
             })
-            .map(t => {
+            .forEach(t => {
               const filename = t.filename || 'UFC Event';
-              const displayName = filename
-                .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
+              const displayName = filename.replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
                 .replace(/\./g, ' ')
                 .replace(/_/g, ' ')
                 .trim();
 
-              return {
+              metas.push({
                 id: `rd_ufc_${t.id}_${filename}`,
                 type: "movie",
                 name: displayName,
                 poster: ufcLogo,
                 posterShape: "regular",
                 background: ufcBackground
-              };
+              });
             });
-
-          metas.push(...rdUfc);
         }
-      } catch (e) {
-        console.error("RD UFC error:", e.message);
       }
+    } catch (err) {
+      return res.json({ error: "RD UFC error: " + err.message });
     }
 
-    // ---------------------------------------------------------
-    // TORBOX UFC
-    // ---------------------------------------------------------
-    if (TORBOX_API_KEY) {
-      try {
+    // ---------------- TORBOX UFC ----------------
+    try {
+      if (TORBOX_API_KEY) {
         const tbResp = await fetch('https://api.torbox.app/v1/api/torrents/mylist', {
-          headers: { 'Authorization': `Bearer ${TORBOX_API_KEY}` }
+          headers: { Authorization: `Bearer ${TORBOX_API_KEY}` }
         });
 
         if (!tbResp.ok) {
-          console.error("TorBox UFC fetch failed:", tbResp.status);
-        } else {
-          const json = await tbResp.json();
+          return res.json({ error: "TorBox fetch failed: " + tbResp.status });
+        }
 
-          if (!json.success || !Array.isArray(json.data)) {
-            console.error("TorBox UFC returned no data:", json);
-          } else {
-            const torrents = json.data;
+        const json = await tbResp.json();
 
-            const tbUfc = torrents
-              .filter(t => {
-                // Combine all possible name fields
-                const rawName =
-                  (t.name || '') +
-                  ' ' +
-                  (t.files?.[0]?.short_name || '') +
-                  ' ' +
-                  (t.files?.[0]?.name || '');
+        if (!json.success || !Array.isArray(json.data)) {
+          return res.json({ error: "TorBox returned no data", raw: json });
+        }
 
-                const name = rawName.toLowerCase();
+        json.data.forEach(t => {
+          try {
+            const rawName =
+              (t.name || '') + ' ' +
+              (t.files?.[0]?.short_name || '') + ' ' +
+              (t.files?.[0]?.name || '');
 
-                // TorBox "downloaded" logic
-                const isDownloaded =
-                  t.download_present === true ||
-                  t.progress === 1 ||
-                  t.download_state === "cached";
+            const name = rawName.toLowerCase();
 
-                return (
-                  isDownloaded &&
-                  (name.includes('ufc') || name.includes('mma') || name.includes('fight'))
-                );
-              })
-              .map(t => {
-                const file = t.files?.[0];
-                const filename =
-                  file?.short_name ||
-                  file?.name ||
-                  t.name ||
-                  'UFC Event';
+            const isDownloaded =
+              t.download_present === true ||
+              t.progress === 1 ||
+              t.download_state === "cached";
 
-                const displayName = filename
-                  .replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
-                  .replace(/\./g, ' ')
-                  .replace(/_/g, ' ')
-                  .trim();
+            if (!isDownloaded) return;
+            if (!name.includes('ufc') && !name.includes('mma') && !name.includes('fight')) return;
 
-                return {
+            const file = t.files?.[0];
+            const filename =
+              file?.short_name ||
+              file?.name ||
+              t.name ||
+              'UFC Event';
+
+            const displayName = filename.replace(/\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i, '')
+              .replace(/\./g, ' ')
+              .replace(/_/g, ' ')
+              .trim();
+
+            metas.push({
+              id: `tb_ufc_${t.id}_${encodeURIComponent(filename)}`,
+              type: "movie",
+              name: displayName,
+              poster: ufcLogo,
+              posterShape: "regular",
+              background: ufcBackground
+            });
+
+          } catch (innerErr) {
+            metas.push({ error: "TorBox item error: " + innerErr.message, item: t });
+          }
+        });
+      }
+    } catch (err) {
+      return res.json({ error: "TorBox UFC error: " + err.message });
+    }
+
+    return res.json({ metas });
+
+  } catch (fatal) {
+    return res.json({ fatal: fatal.message, stack: fatal.stack });
+  }
+};
