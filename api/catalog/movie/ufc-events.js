@@ -85,8 +85,7 @@ module.exports = async (req, res) => {
               name: displayName,
               poster: ufcLogo,
               posterShape: "regular",
-              background: ufcBackground,
-              url: url
+              background: ufcBackground
             });
 
           } catch (innerErr) {
