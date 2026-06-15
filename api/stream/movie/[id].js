@@ -3,6 +3,46 @@ const { REAL_DEBRID_API_KEY, TORBOX_API_KEY } = process.env;
 module.exports = async (req, res) => {
   try {
     const id = req.query.id;
+    // --- Manual TorBox direct URL path ---
+if (id.startsWith("manual_tb_")) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+
+    const filename = decodeURIComponent(id.replace("manual_tb_", ""));
+
+    const filePath = path.join(process.cwd(), 'api', 'data', 'torbox-manual.json');
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const manual = JSON.parse(raw);
+
+    const entry = manual.files.find(f => f.url.includes(filename));
+
+    if (!entry) {
+      console.error("Manual TB: file not found");
+      return res.json({ streams: [] });
+    }
+
+    return res.json({
+      streams: [
+        {
+          title: filename,
+          name: "Manual TorBox",
+          url: entry.url,
+          behaviorHints: {
+            notWebReady: false,
+            bingeGroup: `manual-tb-${id}`
+          },
+          type: "movie"
+        }
+      ]
+    });
+
+  } catch (err) {
+    console.error("Manual TB stream error:", err.message);
+    return res.json({ streams: [] });
+  }
+}
+
     console.log('Stream request for ID:', id);
 
     res.setHeader('Content-Type', 'application/json');
