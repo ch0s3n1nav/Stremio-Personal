@@ -7,6 +7,12 @@ const ALLDEBRID_STATUS_URL =
 const ALLDEBRID_FILES_URL =
   'https://api.alldebrid.com/v4/magnet/files';
 
+const ALLDEBRID_UNLOCK_URL =
+  'https://api.alldebrid.com/v4/link/unlock';
+
+const ALLDEBRID_DELAYED_URL =
+  'https://api.alldebrid.com/v4/link/delayed';
+
 const MANIFEST = {
   id: 'com.stremio.navsufcalldebrid',
   version: '1.0.0',
@@ -59,9 +65,7 @@ function base64UrlDecode(value) {
 }
 
 /*
- * AllDebrid API helper.
- *
- * AllDebrid expects the API key as a Bearer token.
+ * AllDebrid API helper
  */
 async function allDebridRequest(url, options = {}) {
   if (!ALLDEBRID_API_KEY) {
@@ -103,7 +107,10 @@ async function allDebridRequest(url, options = {}) {
     );
   }
 
-  if (data?.status?.code && data.status.code !== 200) {
+  if (
+    data?.status?.code &&
+    data.status.code !== 200
+  ) {
     throw new Error(
       `AllDebrid API error (${data.status.code}): ${
         data.status.message || 'Unknown error'
@@ -114,6 +121,9 @@ async function allDebridRequest(url, options = {}) {
   return data;
 }
 
+/*
+ * Get ready magnets
+ */
 async function getReadyMagnets() {
   const body = new URLSearchParams();
 
@@ -124,7 +134,8 @@ async function getReadyMagnets() {
     {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type':
+          'application/x-www-form-urlencoded'
       },
       body: body.toString()
     }
@@ -133,6 +144,9 @@ async function getReadyMagnets() {
   return data?.data?.magnets || [];
 }
 
+/*
+ * Flatten AllDebrid's nested file tree
+ */
 function flattenFiles(nodes, currentPath = '') {
   const result = [];
 
@@ -149,19 +163,14 @@ function flattenFiles(nodes, currentPath = '') {
       ? `${currentPath}/${node.n}`
       : node.n;
 
-    /*
-     * Folder
-     */
     if (Array.isArray(node.e)) {
       result.push(
         ...flattenFiles(node.e, nodePath)
       );
+
       continue;
     }
 
-    /*
-     * File
-     */
     if (node.l) {
       result.push({
         name: node.n,
@@ -175,6 +184,9 @@ function flattenFiles(nodes, currentPath = '') {
   return result;
 }
 
+/*
+ * Get files for magnets
+ */
 async function getMagnetFiles(magnetIds) {
   if (!magnetIds.length) {
     return [];
@@ -191,7 +203,8 @@ async function getMagnetFiles(magnetIds) {
     {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type':
+          'application/x-www-form-urlencoded'
       },
       body: body.toString()
     }
@@ -200,23 +213,34 @@ async function getMagnetFiles(magnetIds) {
   return data?.data?.magnets || [];
 }
 
+/*
+ * Check whether a file is a video
+ */
 function isVideoFile(fileName) {
   return /\.(mp4|mkv|avi|mov|m4v|webm|ts|m2ts)$/i.test(
     fileName || ''
   );
 }
 
+/*
+ * Check whether a filename is UFC/MMA related
+ */
 function isUfcFile(name) {
   const value = String(name || '').toLowerCase();
 
   return (
     value.includes('ufc') ||
-    value.includes('ultimate fighting championship') ||
+    value.includes(
+      'ultimate fighting championship'
+    ) ||
     value.includes('mma') ||
     value.includes('fight night')
   );
 }
 
+/*
+ * Get UFC files from all ready magnets
+ */
 async function getUfcFiles() {
   const magnets = await getReadyMagnets();
 
@@ -236,7 +260,8 @@ async function getUfcFiles() {
     const magnetId = magnet.id;
 
     const originalMagnet = magnets.find(
-      item => String(item.id) === String(magnetId)
+      item =>
+        String(item.id) === String(magnetId)
     );
 
     const magnetName =
@@ -245,7 +270,9 @@ async function getUfcFiles() {
       '';
 
     const files = flattenFiles(
-      magnet.files || magnet.file || []
+      magnet.files ||
+      magnet.file ||
+      []
     );
 
     for (const file of files) {
@@ -276,10 +303,18 @@ async function getUfcFiles() {
   return results;
 }
 
+/*
+ * Create Stremio file ID
+ */
 function makeFileId(magnetId, filePath) {
-  return `ad_${magnetId}_${base64UrlEncode(filePath)}`;
+  return `ad_${magnetId}_${base64UrlEncode(
+    filePath
+  )}`;
 }
 
+/*
+ * Decode Stremio file ID
+ */
 function parseFileId(id) {
   if (!id || !id.startsWith('ad_')) {
     return null;
@@ -292,8 +327,14 @@ function parseFileId(id) {
     return null;
   }
 
-  const magnetId = value.substring(0, separator);
-  const encodedPath = value.substring(separator + 1);
+  const magnetId = value.substring(
+    0,
+    separator
+  );
+
+  const encodedPath = value.substring(
+    separator + 1
+  );
 
   if (!magnetId || !encodedPath) {
     return null;
@@ -305,11 +346,20 @@ function parseFileId(id) {
   };
 }
 
-async function findFile(magnetId, filePath) {
-  const magnets = await getMagnetFiles([magnetId]);
+/*
+ * Find a specific file inside an AllDebrid magnet
+ */
+async function findFile(
+  magnetId,
+  filePath
+) {
+  const magnets = await getMagnetFiles([
+    magnetId
+  ]);
 
   const magnet = magnets.find(
-    item => String(item.id) === String(magnetId)
+    item =>
+      String(item.id) === String(magnetId)
   );
 
   if (!magnet) {
@@ -317,16 +367,120 @@ async function findFile(magnetId, filePath) {
   }
 
   const files = flattenFiles(
-    magnet.files || magnet.file || []
+    magnet.files ||
+    magnet.file ||
+    []
   );
 
   return (
-    files.find(file => file.path === filePath) ||
-    files.find(file => file.name === filePath) ||
+    files.find(
+      file => file.path === filePath
+    ) ||
+    files.find(
+      file => file.name === filePath
+    ) ||
     null
   );
 }
 
+/*
+ * Convert AllDebrid's private /f/ link
+ * into the real downloadable /dl/ link.
+ *
+ * AllDebrid documents /link/unlock as the
+ * endpoint for this conversion.
+ */
+async function unlockAllDebridLink(
+  privateLink
+) {
+  const body = new URLSearchParams();
+
+  body.append('link', privateLink);
+
+  const data = await allDebridRequest(
+    ALLDEBRID_UNLOCK_URL,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type':
+          'application/x-www-form-urlencoded'
+      },
+      body: body.toString()
+    }
+  );
+
+  const result = data?.data;
+
+  if (!result) {
+    throw new Error(
+      'AllDebrid did not return link data'
+    );
+  }
+
+  /*
+   * Normal case:
+   * AllDebrid immediately gives us the
+   * real debrid.it download URL.
+   */
+  if (result.link) {
+    return result.link;
+  }
+
+  /*
+   * Sometimes AllDebrid needs a little
+   * time to generate the link.
+   */
+  if (result.delayed) {
+    const delayedId = result.delayed;
+
+    for (let attempt = 0; attempt < 12; attempt++) {
+      await new Promise(resolve =>
+        setTimeout(resolve, 5000)
+      );
+
+      const delayedBody =
+        new URLSearchParams();
+
+      delayedBody.append(
+        'id',
+        String(delayedId)
+      );
+
+      const delayedData =
+        await allDebridRequest(
+          ALLDEBRID_DELAYED_URL,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/x-www-form-urlencoded'
+            },
+            body:
+              delayedBody.toString()
+          }
+        );
+
+      const delayedResult =
+        delayedData?.data;
+
+      if (delayedResult?.link) {
+        return delayedResult.link;
+      }
+    }
+
+    throw new Error(
+      'AllDebrid took too long to generate the download link'
+    );
+  }
+
+  throw new Error(
+    'AllDebrid did not provide a downloadable link'
+  );
+}
+
+/*
+ * Main request handler
+ */
 async function handleRequest(req, res) {
   const path = getPath(req);
 
@@ -334,7 +488,11 @@ async function handleRequest(req, res) {
    * Manifest
    */
   if (path === '/manifest.json') {
-    return sendJson(res, 200, MANIFEST);
+    return sendJson(
+      res,
+      200,
+      MANIFEST
+    );
   }
 
   /*
@@ -342,18 +500,23 @@ async function handleRequest(req, res) {
    */
   if (path === '/test-alldebrid') {
     try {
-      const magnets = await getReadyMagnets();
+      const magnets =
+        await getReadyMagnets();
 
       return sendJson(res, 200, {
         success: true,
         apiKey: 'SET',
         readyMagnets: magnets.length,
-        message: 'AllDebrid connection is working.'
+        message:
+          'AllDebrid connection is working.'
       });
     } catch (error) {
       return sendJson(res, 500, {
         success: false,
-        apiKey: ALLDEBRID_API_KEY ? 'SET' : 'NOT SET',
+        apiKey:
+          ALLDEBRID_API_KEY
+            ? 'SET'
+            : 'NOT SET',
         error: error.message
       });
     }
@@ -362,26 +525,62 @@ async function handleRequest(req, res) {
   /*
    * UFC catalogue
    */
-  if (path === '/catalog/movie/ufc-events.json') {
+  if (
+    path ===
+    '/catalog/movie/ufc-events.json'
+  ) {
     try {
-      const files = await getUfcFiles();
+      const files =
+        await getUfcFiles();
 
-      const metas = files.map(file => ({
-        id: makeFileId(file.magnetId, file.path),
-        type: 'movie',
-        name: file.fileName,
-        description: file.magnetName,
-        poster:
-          'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600',
-        background:
-          'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=1600',
-        releaseInfo: file.completionDate
-          ? new Date(file.completionDate * 1000)
-              .getFullYear()
-              .toString()
-          : '',
-        website: 'https://www.ufc.com'
-      }));
+      const url =
+        new URL(
+          req.url,
+          'https://example.com'
+        );
+
+      const search =
+        url.searchParams.get(
+          'search'
+        );
+
+      const filteredFiles =
+        search
+          ? files.filter(file =>
+              `${file.fileName} ${file.magnetName}`
+                .toLowerCase()
+                .includes(
+                  search.toLowerCase()
+                )
+            )
+          : files;
+
+      const metas =
+        filteredFiles.map(file => ({
+          id: makeFileId(
+            file.magnetId,
+            file.path
+          ),
+          type: 'movie',
+          name: file.fileName,
+          description:
+            file.magnetName,
+          poster:
+            'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600',
+          background:
+            'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=1600',
+          releaseInfo:
+            file.completionDate
+              ? new Date(
+                  file.completionDate *
+                    1000
+                )
+                  .getFullYear()
+                  .toString()
+              : '',
+          website:
+            'https://www.ufc.com'
+        }));
 
       return sendJson(res, 200, {
         metas
@@ -398,27 +597,37 @@ async function handleRequest(req, res) {
    * Meta
    */
   const metaMatch =
-    path.match(/^\/meta\/movie\/([^/]+)\.json$/);
+    path.match(
+      /^\/meta\/movie\/([^/]+)\.json$/
+    );
 
   if (metaMatch) {
     try {
-      const id = decodeURIComponent(metaMatch[1]);
-      const parsed = parseFileId(id);
+      const id =
+        decodeURIComponent(
+          metaMatch[1]
+        );
+
+      const parsed =
+        parseFileId(id);
 
       if (!parsed) {
         return sendJson(res, 404, {
-          error: 'Invalid file ID'
+          error:
+            'Invalid file ID'
         });
       }
 
-      const file = await findFile(
-        parsed.magnetId,
-        parsed.filePath
-      );
+      const file =
+        await findFile(
+          parsed.magnetId,
+          parsed.filePath
+        );
 
       if (!file) {
         return sendJson(res, 404, {
-          error: 'File not found'
+          error:
+            'File not found'
         });
       }
 
@@ -427,7 +636,8 @@ async function handleRequest(req, res) {
           id,
           type: 'movie',
           name: file.name,
-          description: 'UFC / MMA event from AllDebrid',
+          description:
+            'UFC / MMA event from AllDebrid',
           poster:
             'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600',
           background:
@@ -445,12 +655,19 @@ async function handleRequest(req, res) {
    * Stream
    */
   const streamMatch =
-    path.match(/^\/stream\/movie\/([^/]+)\.json$/);
+    path.match(
+      /^\/stream\/movie\/([^/]+)\.json$/
+    );
 
   if (streamMatch) {
     try {
-      const id = decodeURIComponent(streamMatch[1]);
-      const parsed = parseFileId(id);
+      const id =
+        decodeURIComponent(
+          streamMatch[1]
+        );
+
+      const parsed =
+        parseFileId(id);
 
       if (!parsed) {
         return sendJson(res, 404, {
@@ -458,10 +675,11 @@ async function handleRequest(req, res) {
         });
       }
 
-      const file = await findFile(
-        parsed.magnetId,
-        parsed.filePath
-      );
+      const file =
+        await findFile(
+          parsed.magnetId,
+          parsed.filePath
+        );
 
       if (!file || !file.url) {
         return sendJson(res, 404, {
@@ -469,12 +687,27 @@ async function handleRequest(req, res) {
         });
       }
 
+      /*
+       * IMPORTANT:
+       *
+       * file.url is the AllDebrid
+       * /f/ private link.
+       *
+       * We now use AllDebrid's API to
+       * unlock it and obtain the actual
+       * temporary /dl/ media URL.
+       */
+      const directUrl =
+        await unlockAllDebridLink(
+          file.url
+        );
+
       return sendJson(res, 200, {
         streams: [
           {
             name: 'AllDebrid',
             title: file.name,
-            url: file.url
+            url: directUrl
           }
         ]
       });
@@ -486,55 +719,27 @@ async function handleRequest(req, res) {
     }
   }
 
-  /*
-   * Simple search support
-   */
-  if (
-    path === '/catalog/movie/ufc-events.json' &&
-    req.url.includes('search=')
-  ) {
-    try {
-      const query =
-        new URL(req.url, 'https://example.com')
-          .searchParams
-          .get('search') || '';
-
-      const files = await getUfcFiles();
-
-      const filtered = files.filter(file =>
-        `${file.fileName} ${file.magnetName}`
-          .toLowerCase()
-          .includes(query.toLowerCase())
-      );
-
-      return sendJson(res, 200, {
-        metas: filtered.map(file => ({
-          id: makeFileId(file.magnetId, file.path),
-          type: 'movie',
-          name: file.fileName,
-          description: file.magnetName
-        }))
-      });
-    } catch (error) {
-      return sendJson(res, 500, {
-        metas: [],
-        error: error.message
-      });
-    }
-  }
-
   return sendJson(res, 404, {
-    error: 'Endpoint not found',
+    error:
+      'Endpoint not found',
     path
   });
 }
 
-module.exports = async (req, res) => {
+module.exports = async (
+  req,
+  res
+) => {
   try {
-    await handleRequest(req, res);
+    await handleRequest(
+      req,
+      res
+    );
   } catch (error) {
     sendJson(res, 500, {
-      error: error.message || 'Internal server error'
+      error:
+        error.message ||
+        'Internal server error'
     });
   }
 };
