@@ -13,6 +13,9 @@ const ALLDEBRID_UNLOCK_URL =
 const ALLDEBRID_DELAYED_URL =
   'https://api.alldebrid.com/v4/link/delayed';
 
+const ALLDEBRID_STREAMING_URL =
+  'https://api.alldebrid.com/v4/link/streaming';
+
 const MANIFEST = {
   id: 'com.stremio.navsufcalldebrid',
   version: '1.0.0',
@@ -496,6 +499,53 @@ async function handleRequest(req, res) {
       MANIFEST
     );
   }
+
+  /*
+ * AllDebrid streaming API diagnostic test
+ *
+ * This tests whether AllDebrid will allow the
+ * Vercel server to request a streaming link.
+ */
+if (path === '/test-alldebrid-streaming') {
+  try {
+    const testLink =
+      'https://alldebrid.com/f/3TO0YfFNbrSxYR1gubi52XoOhnsH5XzUBfRtzG7LZ1E';
+
+    const body = new URLSearchParams();
+
+    body.append('link', testLink);
+
+    const data = await allDebridRequest(
+      ALLDEBRID_STREAMING_URL,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type':
+            'application/x-www-form-urlencoded'
+        },
+        body: body.toString()
+      }
+    );
+
+    return sendJson(res, 200, {
+      success: true,
+      message:
+        'AllDebrid streaming API responded.',
+      responseKeys:
+        Object.keys(data || {}),
+      dataKeys:
+        Object.keys(data?.data || {}),
+      status:
+        data?.status || null
+    });
+
+  } catch (error) {
+    return sendJson(res, 500, {
+      success: false,
+      error: error.message
+    });
+  }
+}
 
   /*
    * AllDebrid connection test
