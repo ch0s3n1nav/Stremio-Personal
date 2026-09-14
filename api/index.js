@@ -409,13 +409,15 @@ async function unlockAllDebridLink(
     }
   );
 
-  const result = data?.data;
+const result = data?.data;
 
-  if (!result) {
-    throw new Error(
-      'AllDebrid did not return link data'
-    );
-  }
+if (!result) {
+  throw new Error(
+    `AllDebrid unlock response: status=${data?.status || 'unknown'}, ` +
+    `error=${data?.error?.code || data?.error?.message || 'none'}, ` +
+    `keys=${Object.keys(data || {}).join(',')}`
+  );
+}
 
   /*
    * Normal case:
