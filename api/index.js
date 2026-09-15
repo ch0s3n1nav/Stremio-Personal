@@ -151,7 +151,7 @@ function handleRoot(res) {
 function handleManifest(res) {
   return res.json({
     id: 'com.stremio.navsufcalldebrid',
-    version: '2.1.2',
+    version: '2.1.3',
     name: "Nav's UFC AllDebrid",
 
     description:
@@ -603,7 +603,12 @@ async function getUfcFiles() {
       await allDebridRequest(
         ALLDEBRID_FILES_URL,
         {
-          ids:
+          /*
+           * IMPORTANT:
+           * AllDebrid expects "id[]" here,
+           * not "ids[]".
+           */
+          id:
             batch.map(
               m => m.id
             )
@@ -624,6 +629,17 @@ async function getUfcFiles() {
             String(m.id) ===
             String(magnet.id)
         );
+
+      if (
+        magnet.error
+      ) {
+        console.log(
+          'AllDebrid magnet error:',
+          magnet.error
+        );
+
+        continue;
+      }
 
       const files =
         flattenFiles(
@@ -705,13 +721,6 @@ async function getReadyMagnets() {
       }
     );
 
-  /*
-   * AllDebrid documents this as an array.
-   * We still normalise it because the current
-   * response reaching Vercel is apparently not
-   * arriving as a normal JavaScript array.
-   */
-
   const magnets =
     normaliseArray(
       data?.data?.magnets
@@ -752,7 +761,12 @@ async function findFile(
     await allDebridRequest(
       ALLDEBRID_FILES_URL,
       {
-        ids: [
+        /*
+         * IMPORTANT:
+         * AllDebrid expects "id[]" here,
+         * not "ids[]".
+         */
+        id: [
           Number(magnetId)
         ]
       }
