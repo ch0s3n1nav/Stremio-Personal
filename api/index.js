@@ -393,38 +393,39 @@ async function handleStream(
 /*
  * Diagnostic endpoint.
  *
- * This directly tests the AllDebrid API and returns:
- * - HTTP status
- * - content type
- * - response body
- * - whether the API key is present
+ * This tests the AllDebrid API connection.
  *
  * The API key itself is NEVER returned.
  */
-```javascript
 async function handleTestAllDebrid(res) {
   try {
     if (!ALLDEBRID_API_KEY) {
       return res.status(200).json({
         success: false,
         apiKey: 'NOT SET',
-        error: 'ALLDEBRID_API_KEY is not configured in Vercel.'
+        error:
+          'ALLDEBRID_API_KEY is not configured in Vercel.'
       });
     }
 
-    const body = new URLSearchParams();
-    body.append('status', 'ready');
+    const body =
+      new URLSearchParams();
 
-    let response;
+    body.append(
+      'status',
+      'ready'
+    );
 
-    try {
-      response = await fetch(
+    const response =
+      await fetch(
         ALLDEBRID_STATUS_URL,
         {
           method: 'POST',
+
           headers: {
             Authorization:
-              'Bearer ' + ALLDEBRID_API_KEY,
+              'Bearer ' +
+              ALLDEBRID_API_KEY,
 
             'Content-Type':
               'application/x-www-form-urlencoded',
@@ -432,36 +433,22 @@ async function handleTestAllDebrid(res) {
             Accept:
               'application/json'
           },
-          body: body.toString()
+
+          body:
+            body.toString()
         }
       );
-    } catch (fetchError) {
-      return res.status(200).json({
-        success: false,
-        apiKey: 'SET',
-        stage: 'FETCH',
-        error: fetchError.message
-      });
-    }
 
-    let responseText = '';
-
-    try {
-      responseText = await response.text();
-    } catch (textError) {
-      return res.status(200).json({
-        success: false,
-        apiKey: 'SET',
-        stage: 'READ_RESPONSE',
-        httpStatus: response.status,
-        error: textError.message
-      });
-    }
+    const responseText =
+      await response.text();
 
     let json = null;
 
     try {
-      json = JSON.parse(responseText);
+      json =
+        JSON.parse(
+          responseText
+        );
     } catch (_) {
       json = null;
     }
@@ -483,7 +470,10 @@ async function handleTestAllDebrid(res) {
       responseBody:
         json !== null
           ? json
-          : responseText.substring(0, 2000)
+          : responseText.substring(
+              0,
+              2000
+            )
     });
 
   } catch (error) {
@@ -494,65 +484,13 @@ async function handleTestAllDebrid(res) {
 
     return res.status(200).json({
       success: false,
+
       apiKey: 'SET',
-      stage: 'DIAGNOSTIC',
-      error: error.message
+
+      error:
+        error.message
     });
   }
-}
-```
-function diagnoseAllDebridResponse(
-  httpStatus,
-  json,
-  text
-) {
-  if (
-    json &&
-    json.status === 'success'
-  ) {
-    return 'AllDebrid API authentication and request are working.';
-  }
-
-  if (
-    json &&
-    json.error
-  ) {
-    return {
-      type: 'ALLDEBRID_API_ERROR',
-      code:
-        json.error.code || null,
-      message:
-        json.error.message || null
-    };
-  }
-
-  if (httpStatus === 401) {
-    return 'AllDebrid rejected the authentication credentials with HTTP 401.';
-  }
-
-  if (httpStatus === 403) {
-    return (
-      'AllDebrid rejected the request with HTTP 403. ' +
-      'The response body above should reveal whether this is an IP/API-key/account restriction.'
-    );
-  }
-
-  if (httpStatus >= 400) {
-    return (
-      'AllDebrid rejected the request with HTTP ' +
-      httpStatus +
-      '.'
-    );
-  }
-
-  if (
-    text &&
-    text.toLowerCase().includes('cloudflare')
-  ) {
-    return 'The request appears to be receiving a Cloudflare response rather than the normal AllDebrid API response.';
-  }
-
-  return 'Unexpected AllDebrid response. Inspect the response body above.';
 }
 
 
@@ -627,7 +565,9 @@ function getLinkType(link) {
   const value =
     String(link).toLowerCase();
 
-  if (value.includes('/dl/')) {
+  if (
+    value.includes('/dl/')
+  ) {
     return 'DIRECT_DEBRID_DOWNLOAD';
   }
 
@@ -697,10 +637,12 @@ async function getUfcFiles() {
       of returnedMagnets
     ) {
       const sourceMagnet =
-        magnets.find(function(m) {
-          return String(m.id) ===
-            String(magnet.id);
-        });
+        magnets.find(
+          function(m) {
+            return String(m.id) ===
+              String(magnet.id);
+          }
+        );
 
       const files =
         flattenFiles(
@@ -1010,7 +952,10 @@ async function allDebridRequest(
       'AllDebrid returned a non-JSON response (' +
       response.status +
       '). Body: ' +
-      responseText.substring(0, 500)
+      responseText.substring(
+        0,
+        500
+      )
     );
   }
 
