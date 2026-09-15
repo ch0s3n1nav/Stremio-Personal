@@ -835,7 +835,7 @@ if (path === '/test-alldebrid-webdav') {
       .toString('base64');
 
     const response = await fetch(
-      'https://webdav.debrid.it/',
+      'https://webdav.debrid.it/magnets/',
       {
         method: 'PROPFIND',
         headers: {
