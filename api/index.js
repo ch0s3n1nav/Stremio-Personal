@@ -840,7 +840,7 @@ if (path === '/test-alldebrid-webdav') {
         method: 'PROPFIND',
         headers: {
           'Authorization': `Basic ${auth}`,
-          'Depth': '1'
+          'Depth': '2'
         }
       }
     );
@@ -852,7 +852,7 @@ if (path === '/test-alldebrid-webdav') {
       httpStatus: response.status,
       contentType: response.headers.get('content-type'),
       responseLength: text.length,
-      preview: text.substring(0, 1000)
+      webdav: text
     });
 
   } catch (error) {
