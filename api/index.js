@@ -819,45 +819,27 @@ if (path === '/test-alldebrid-page') {
     }
   }
 
-if (path === '/test-alldebrid-webdav') {
+if (path === '/test-media-folder') {
   try {
-    const apiKey = process.env.ALLDEBRID_API_KEY;
-
-    if (!apiKey) {
-      return sendJson(res, 500, {
-        success: false,
-        error: 'ALLDEBRID_API_KEY is not set'
-      });
-    }
-
-    const auth = Buffer
-      .from(`${apiKey}:eeeeee`)
-      .toString('base64');
-
-    const filePath =
-      '/magnets/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4';
+    const mediaFolderUrl =
+      'https://myfiles.debrid.it/5hlfwt7w89/';
 
     const response = await fetch(
-      `https://webdav.debrid.it${filePath}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Range': 'bytes=0-1023'
-        }
-      }
+      `${mediaFolderUrl}magnets/`
     );
 
-    const buffer = await response.arrayBuffer();
+    const text = await response.text();
 
     return sendJson(res, 200, {
-      success: response.ok || response.status === 206,
+      success: response.ok,
       httpStatus: response.status,
       contentType: response.headers.get('content-type'),
       contentLength: response.headers.get('content-length'),
-      contentRange: response.headers.get('content-range'),
-      acceptRanges: response.headers.get('accept-ranges'),
-      bytesReceived: buffer.byteLength
+      containsUFCFightNight:
+        text.includes('UFC.Fight.Night.287'),
+      containsUFCContender:
+        text.includes('UFC.Tuesday.Night.Contender.Series'),
+      responsePreview: text.substring(0, 2000)
     });
 
   } catch (error) {
