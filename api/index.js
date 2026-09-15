@@ -16,6 +16,9 @@ const ALLDEBRID_DELAYED_URL =
 const ALLDEBRID_STREAMING_URL =
   'https://api.alldebrid.com/v4/link/streaming';
 
+const ALLDEBRID_INFOS_URL =
+  'https://api.alldebrid.com/v4/link/infos';
+
 const MANIFEST = {
   id: 'com.stremio.navsufcalldebrid',
   version: '1.0.0',
@@ -390,8 +393,10 @@ async function findFile(
  * Convert AllDebrid's private /f/ link
  * into the real downloadable /dl/ link.
  *
- * AllDebrid documents /link/unlock as the
- * endpoint for this conversion.
+ * This remains here for reference, but the
+ * current temporary stream test below does
+ * not use it because Vercel receives
+ * NO_SERVER from AllDebrid.
  */
 async function unlockAllDebridLink(
   privateLink
@@ -412,29 +417,20 @@ async function unlockAllDebridLink(
     }
   );
 
-const result = data?.data;
+  const result = data?.data;
 
-if (!result) {
-  throw new Error(
-    `AllDebrid unlock response: status=${data?.status || 'unknown'}, ` +
-    `error=${data?.error?.code || data?.error?.message || 'none'}, ` +
-    `keys=${Object.keys(data || {}).join(',')}`
-  );
-}
+  if (!result) {
+    throw new Error(
+      `AllDebrid unlock response: status=${data?.status || 'unknown'}, ` +
+      `error=${data?.error?.code || data?.error?.message || 'none'}, ` +
+      `keys=${Object.keys(data || {}).join(',')}`
+    );
+  }
 
-  /*
-   * Normal case:
-   * AllDebrid immediately gives us the
-   * real debrid.it download URL.
-   */
   if (result.link) {
     return result.link;
   }
 
-  /*
-   * Sometimes AllDebrid needs a little
-   * time to generate the link.
-   */
   if (result.delayed) {
     const delayedId = result.delayed;
 
@@ -501,101 +497,6 @@ async function handleRequest(req, res) {
   }
 
   /*
- * AllDebrid streaming API diagnostic test
- *
- * This tests whether AllDebrid will allow the
- * Vercel server to request a streaming link.
- */
-if (path === '/test-alldebrid-streaming') {
-  try {
-    const testLink =
-      'https://alldebrid.com/f/3TO0YfFNbrSxYR1gubi52XoOhnsH5XzUBfRtzG7LZ1E';
-
-    const body = new URLSearchParams();
-
-    body.append('link', testLink);
-
-    const data = await allDebridRequest(
-      ALLDEBRID_STREAMING_URL,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type':
-            'application/x-www-form-urlencoded'
-        },
-        body: body.toString()
-      }
-    );
-
-    return sendJson(res, 200, {
-      success: true,
-      message:
-        'AllDebrid streaming API responded.',
-      responseKeys:
-        Object.keys(data || {}),
-      dataKeys:
-        Object.keys(data?.data || {}),
-      status:
-        data?.status || null
-    });
-
-  } catch (error) {
-    return sendJson(res, 500, {
-      success: false,
-      error: error.message
-    });
-  }
-}
-
-/*
- * Test whether Vercel can read an AllDebrid
- * private-file page and find its download link.
- */
-if (path === '/test-alldebrid-page') {
-  try {
-    const testLink =
-      'https://alldebrid.com/f/3TO0YfFNbrSxYR1gubi52XoOhnsH5XzUBfRtzG7LZ1E';
-
-    const response = await fetch(testLink, {
-      method: 'GET',
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
-        'Accept':
-          'text/html,application/xhtml+xml'
-      }
-    });
-
-    const html = await response.text();
-
-    /*
-     * Look for the actual AllDebrid download URL.
-     */
-    const match = html.match(
-      /https?:\/\/[^"'\\\s<>]*debrid\.it\/dl\/[^"'\\\s<>]*/i
-    );
-
-    return sendJson(res, 200, {
-      success: true,
-      httpStatus: response.status,
-      contentType:
-        response.headers.get('content-type'),
-      pageLength: html.length,
-      containsDownloadLink: !!match,
-      downloadHost: match
-        ? new URL(match[0]).hostname
-        : null
-    });
-
-  } catch (error) {
-    return sendJson(res, 500, {
-      success: false,
-      error: error.message
-    });
-  }
-}
-  
-  /*
    * AllDebrid connection test
    */
   if (path === '/test-alldebrid') {
@@ -617,6 +518,138 @@ if (path === '/test-alldebrid-page') {
           ALLDEBRID_API_KEY
             ? 'SET'
             : 'NOT SET',
+        error: error.message
+      });
+    }
+  }
+
+  /*
+   * Test AllDebrid /link/infos
+   *
+   * This is a diagnostic only.
+   * It checks whether Vercel can ask
+   * AllDebrid for information about the
+   * private /f/ link.
+   */
+  if (path === '/test-alldebrid-infos') {
+    try {
+      const testLink =
+        'https://alldebrid.com/f/3TO0YfFNbrSxYR1gubi52XoOhnsH5XzUBfRtzG7LZ1E';
+
+      const body = new URLSearchParams();
+
+      body.append('link[]', testLink);
+
+      const data = await allDebridRequest(
+        ALLDEBRID_INFOS_URL,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/x-www-form-urlencoded'
+          },
+          body: body.toString()
+        }
+      );
+
+      return sendJson(res, 200, {
+        success: true,
+        status: data?.status || null,
+        data: data?.data || null
+      });
+
+    } catch (error) {
+      return sendJson(res, 500, {
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  /*
+   * AllDebrid streaming API diagnostic test
+   */
+  if (path === '/test-alldebrid-streaming') {
+    try {
+      const testLink =
+        'https://alldebrid.com/f/3TO0YfFNbrSxYR1gubi52XoOhnsH5XzUBfRtzG7LZ1E';
+
+      const body = new URLSearchParams();
+
+      body.append('link', testLink);
+
+      const data = await allDebridRequest(
+        ALLDEBRID_STREAMING_URL,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/x-www-form-urlencoded'
+          },
+          body: body.toString()
+        }
+      );
+
+      return sendJson(res, 200, {
+        success: true,
+        message:
+          'AllDebrid streaming API responded.',
+        responseKeys:
+          Object.keys(data || {}),
+        dataKeys:
+          Object.keys(data?.data || {}),
+        status:
+          data?.status || null
+      });
+
+    } catch (error) {
+      return sendJson(res, 500, {
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  /*
+   * Test whether Vercel can read an AllDebrid
+   * private-file page.
+   */
+  if (path === '/test-alldebrid-page') {
+    try {
+      const testLink =
+        'https://alldebrid.com/f/3TO0YfFNbrSxYR1gubi52XoOhnsH5XzUBfRtzG7LZ1E';
+
+      const response = await fetch(testLink, {
+        method: 'GET',
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
+          'Accept':
+            'text/html,application/xhtml+xml'
+        }
+      });
+
+      const html = await response.text();
+
+      const match = html.match(
+        /https?:\/\/[^"'\\\s<>]*debrid\.it\/dl\/[^"'\\\s<>]*/i
+      );
+
+      return sendJson(res, 200, {
+        success: true,
+        httpStatus: response.status,
+        contentType:
+          response.headers.get('content-type'),
+        pageLength: html.length,
+        containsDownloadLink: !!match,
+        downloadHost: match
+          ? new URL(match[0]).hostname
+          : null
+      });
+
+    } catch (error) {
+      return sendJson(res, 500, {
+        success: false,
         error: error.message
       });
     }
@@ -755,8 +788,8 @@ if (path === '/test-alldebrid-page') {
    * Stream
    *
    * TEMPORARY TEST:
-   * Return a real AllDebrid generated /dl/ URL
-   * directly to Stremio.
+   * Return a real AllDebrid generated /dl/
+   * URL directly to Stremio.
    */
   const streamMatch =
     path.match(
@@ -779,33 +812,36 @@ if (path === '/test-alldebrid-page') {
     });
   }
 
-if (path === '/test-media-file') {
-  try {
-    const fileUrl =
-      'https://myfiles.debrid.it/5hlfwt7w89/magnets/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4';
+  /*
+   * Test Media Folder file access
+   */
+  if (path === '/test-media-file') {
+    try {
+      const fileUrl =
+        'https://myfiles.debrid.it/5hlfwt7w89/magnets/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4';
 
-    const response = await fetch(fileUrl, {
-      method: 'HEAD'
-    });
+      const response = await fetch(fileUrl, {
+        method: 'HEAD'
+      });
 
-    return sendJson(res, 200, {
-      success: response.ok,
-      httpStatus: response.status,
-      contentType: response.headers.get('content-type'),
-      contentLength: response.headers.get('content-length'),
-      acceptRanges: response.headers.get('accept-ranges'),
-      contentDisposition: response.headers.get('content-disposition'),
-      fileUrl: fileUrl
-    });
+      return sendJson(res, 200, {
+        success: response.ok,
+        httpStatus: response.status,
+        contentType: response.headers.get('content-type'),
+        contentLength: response.headers.get('content-length'),
+        acceptRanges: response.headers.get('accept-ranges'),
+        contentDisposition: response.headers.get('content-disposition'),
+        fileUrl: fileUrl
+      });
 
-  } catch (error) {
-    return sendJson(res, 500, {
-      success: false,
-      error: error.message
-    });
+    } catch (error) {
+      return sendJson(res, 500, {
+        success: false,
+        error: error.message
+      });
+    }
   }
-}
-  
+
   return sendJson(res, 404, {
     error:
       'Endpoint not found',
