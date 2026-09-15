@@ -819,27 +819,23 @@ if (path === '/test-alldebrid-page') {
     }
   }
 
-if (path === '/test-media-folder') {
+if (path === '/test-media-file') {
   try {
-    const mediaFolderUrl =
-      'https://myfiles.debrid.it/5hlfwt7w89/';
+    const fileUrl =
+      'https://myfiles.debrid.it/5hlfwt7w89/magnets/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4';
 
-    const response = await fetch(
-      `${mediaFolderUrl}magnets/`
-    );
-
-    const text = await response.text();
+    const response = await fetch(fileUrl, {
+      method: 'HEAD'
+    });
 
     return sendJson(res, 200, {
       success: response.ok,
       httpStatus: response.status,
       contentType: response.headers.get('content-type'),
       contentLength: response.headers.get('content-length'),
-      containsUFCFightNight:
-        text.includes('UFC.Fight.Night.287'),
-      containsUFCContender:
-        text.includes('UFC.Tuesday.Night.Contender.Series'),
-      responsePreview: text.substring(0, 2000)
+      acceptRanges: response.headers.get('accept-ranges'),
+      contentDisposition: response.headers.get('content-disposition'),
+      fileUrl: fileUrl
     });
 
   } catch (error) {
