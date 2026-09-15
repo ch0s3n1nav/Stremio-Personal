@@ -834,13 +834,16 @@ if (path === '/test-alldebrid-webdav') {
       .from(`${apiKey}:eeeeee`)
       .toString('base64');
 
+    const filePath =
+      '/magnets/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4/';
+
     const response = await fetch(
-      'https://webdav.debrid.it/magnets/',
+      `https://webdav.debrid.it${filePath}`,
       {
         method: 'PROPFIND',
         headers: {
           'Authorization': `Basic ${auth}`,
-          'Depth': '2'
+          'Depth': '1'
         }
       }
     );
