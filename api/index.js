@@ -547,6 +547,54 @@ if (path === '/test-alldebrid-streaming') {
   }
 }
 
+/*
+ * Test whether Vercel can read an AllDebrid
+ * private-file page and find its download link.
+ */
+if (path === '/test-alldebrid-page') {
+  try {
+    const testLink =
+      'https://alldebrid.com/f/3TO0YfFNbrSxYR1gubi52XoOhnsH5XzUBfRtzG7LZ1E';
+
+    const response = await fetch(testLink, {
+      method: 'GET',
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
+        'Accept':
+          'text/html,application/xhtml+xml'
+      }
+    });
+
+    const html = await response.text();
+
+    /*
+     * Look for the actual AllDebrid download URL.
+     */
+    const match = html.match(
+      /https?:\/\/[^"'\\\s<>]*debrid\.it\/dl\/[^"'\\\s<>]*/i
+    );
+
+    return sendJson(res, 200, {
+      success: true,
+      httpStatus: response.status,
+      contentType:
+        response.headers.get('content-type'),
+      pageLength: html.length,
+      containsDownloadLink: !!match,
+      downloadHost: match
+        ? new URL(match[0]).hostname
+        : null
+    });
+
+  } catch (error) {
+    return sendJson(res, 500, {
+      success: false,
+      error: error.message
+    });
+  }
+}
+  
   /*
    * AllDebrid connection test
    */
