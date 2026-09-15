@@ -753,6 +753,10 @@ if (path === '/test-alldebrid-page') {
 
   /*
    * Stream
+   *
+   * TEMPORARY TEST:
+   * Return a real AllDebrid generated /dl/ URL
+   * directly to Stremio.
    */
   const streamMatch =
     path.match(
@@ -760,63 +764,19 @@ if (path === '/test-alldebrid-page') {
     );
 
   if (streamMatch) {
-    try {
-      const id =
-        decodeURIComponent(
-          streamMatch[1]
-        );
+    const directUrl =
+      'https://n0o1p2.debrid.it/dl/597yyv5783b/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4';
 
-      const parsed =
-        parseFileId(id);
-
-      if (!parsed) {
-        return sendJson(res, 404, {
-          streams: []
-        });
-      }
-
-      const file =
-        await findFile(
-          parsed.magnetId,
-          parsed.filePath
-        );
-
-      if (!file || !file.url) {
-        return sendJson(res, 404, {
-          streams: []
-        });
-      }
-
-      /*
-       * IMPORTANT:
-       *
-       * file.url is the AllDebrid
-       * /f/ private link.
-       *
-       * We now use AllDebrid's API to
-       * unlock it and obtain the actual
-       * temporary /dl/ media URL.
-       */
-      const directUrl =
-        await unlockAllDebridLink(
-          file.url
-        );
-
-      return sendJson(res, 200, {
-        streams: [
-          {
-            name: 'AllDebrid',
-            title: file.name,
-            url: directUrl
-          }
-        ]
-      });
-    } catch (error) {
-      return sendJson(res, 500, {
-        streams: [],
-        error: error.message
-      });
-    }
+    return sendJson(res, 200, {
+      streams: [
+        {
+          name: 'AllDebrid TEST',
+          title:
+            'UFC Fight Night 287 - TEST STREAM',
+          url: directUrl
+        }
+      ]
+    });
   }
 
 if (path === '/test-media-file') {
