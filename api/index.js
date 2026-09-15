@@ -1,34 +1,27 @@
-const { ALLDEBRID_API_KEY, TMDB_API_KEY } = process.env;
+const ALLDEBRID_API_KEY = process.env.ALLDEBRID_API_KEY || '';
+const TMDB_API_KEY = process.env.TMDB_API_KEY || '';
 
 const ALLDEBRID_STATUS_URL = 'https://api.alldebrid.com/v4.1/magnet/status';
 const ALLDEBRID_FILES_URL = 'https://api.alldebrid.com/v4/magnet/files';
 
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+const UFC_LOGO = 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png';
+const UFC_BACKGROUND = 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg';
 
-const ufcLogo = 'https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png';
-const ufcBackground = 'https://i.ibb.co/LD6y2trs/UFC-Nav-Portrait.jpg';
+const VIDEO_EXTENSIONS = /\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i;
+const UFC_TERMS = /(\bUFC\b|\bMMA\b|Ultimate[ ._-]?Fighting[ ._-]?Championship|Fight[ ._-]?Night)/i;
 
-const VIDEO_EXTENSIONS =
-  /\.(mkv|mp4|avi|mov|wmv|flv|webm|m4v|mpg|mpeg|ts|vob|iso|m2ts)$/i;
-
-const UFC_TERMS =
-  /(\bUFC\b|\bMMA\b|Ultimate[ ._-]?Fighting[ ._-]?Championship|Fight[ ._-]?Night)/i;
-
-
-module.exports = async function(req, res) {
+module.exports = async function handler(req, res) {
   setCors(res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  const requestUrl = new URL(
-    req.url,
-    'http://' + (req.headers.host || 'localhost')
-  );
-
-  const pathname = requestUrl.pathname;
-  const searchParams = requestUrl.searchParams;
+  const host = req.headers.host || 'localhost';
+  const requestUrl = 'http://' + host + (req.url || '/');
+  const url = new URL(requestUrl);
+  const pathname = url.pathname;
+  const searchParams = url.searchParams;
 
   try {
     if (pathname === '/' || pathname === '') {
@@ -48,23 +41,14 @@ module.exports = async function(req, res) {
     }
 
     if (pathname === '/test-alldebrid') {
-      return await handleTestAllDebrid(res);
+      return handleTestAllDebrid(res);
     }
 
     if (pathname === '/test-alldebrid-files') {
-      return await handleTestAllDebridFiles(res);
+      return handleTestAllDebridFiles(res);
     }
 
-    if (pathname === '/test-alldebrid-service') {
-      return res.status(410).json({
-        success: false,
-        error:
-          'service.php is no longer used. The addon uses AllDebrid API file links directly.'
-      });
-    }
-
-    const catalogMatch =
-      pathname.match(/^\/catalog\/movie\/([^/]+)\.json$/);
+    const catalogMatch = pathname.match(/^\/catalog\/movie\/([^/]+)\.json$/);
 
     if (catalogMatch) {
       return await handleCatalog(
@@ -74,8 +58,7 @@ module.exports = async function(req, res) {
       );
     }
 
-    const metaMatch =
-      pathname.match(/^\/meta\/movie\/(.+)\.json$/);
+    const metaMatch = pathname.match(/^\/meta\/movie\/(.+)\.json$/);
 
     if (metaMatch) {
       return await handleMeta(
@@ -84,8 +67,7 @@ module.exports = async function(req, res) {
       );
     }
 
-    const streamMatch =
-      pathname.match(/^\/stream\/movie\/(.+)\.json$/);
+    const streamMatch = pathname.match(/^\/stream\/movie\/(.+)\.json$/);
 
     if (streamMatch) {
       return await handleStream(
@@ -109,14 +91,27 @@ module.exports = async function(req, res) {
   }
 };
 
-
 function setCors(res) {
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
+  res.setHeader(
+    'Content-Type',
+    'application/json'
+  );
 
+  res.setHeader(
+    'Access-Control-Allow-Origin',
+    '*'
+  );
+
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, OPTIONS'
+  );
+
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type'
+  );
+}
 
 function handleRoot(res) {
   return res.json({
@@ -135,18 +130,20 @@ function handleRoot(res) {
   });
 }
 
-
 function handleManifest(res) {
   return res.json({
     id: 'com.stremio.navsufcalldebrid',
-    version: '2.3.0',
+
+    version: '2.1.0',
+
     name: "Nav's UFC AllDebrid",
 
     description:
-      'Shows UFC fights stored in your AllDebrid cloud and streams them using the links returned by AllDebrid.',
+      'Shows UFC fights stored in your AllDebrid cloud and streams them directly in Stremio.',
 
-    logo: ufcLogo,
-    background: ufcBackground,
+    logo: UFC_LOGO,
+
+    background: UFC_BACKGROUND,
 
     types: ['movie'],
 
@@ -155,7 +152,6 @@ function handleManifest(res) {
         type: 'movie',
         id: 'ufc-events',
         name: 'UFC',
-
         extra: [
           {
             name: 'search',
@@ -182,23 +178,26 @@ function handleManifest(res) {
   });
 }
 
-
 function handleConfigure(res) {
   return res.json({
     type: 'configure',
+
     name: "Nav's UFC AllDebrid",
 
     description:
-      'No configuration is required. The addon uses the AllDebrid API key stored securely in Vercel.',
+      'No configuration is required. This addon uses the AllDebrid API key stored securely in Vercel.',
 
-    logo: ufcLogo,
-    background: ufcBackground,
+    logo: UFC_LOGO,
 
-    types: ['movie'],
+    background: UFC_BACKGROUND,
+
+    types: [
+      'movie'
+    ],
+
     settings: []
   });
 }
-
 
 async function handleCatalog(
   res,
@@ -216,92 +215,111 @@ async function handleCatalog(
       .trim()
       .toLowerCase();
 
-  const files = await getUfcFiles();
+  const files =
+    await getUfcFiles();
 
-  let filtered = files;
+  let filtered =
+    files;
 
   if (search) {
-    filtered = files.filter(function(item) {
-      return item.name
-        .toLowerCase()
-        .includes(search);
-    });
+    filtered =
+      files.filter(function (item) {
+        return item.name
+          .toLowerCase()
+          .includes(search);
+      });
   }
 
-  filtered = filtered.slice(0, 100);
+  filtered =
+    filtered.slice(0, 100);
 
-  const metas = filtered.map(function(item) {
-    const title = cleanTitle(item.name);
+  const metas =
+    filtered.map(function (item) {
+      const title =
+        cleanTitle(item.name);
 
-    return {
-      id: item.id,
-      type: 'movie',
-      name: title,
+      return {
+        id: item.id,
 
-      poster: ufcLogo,
-      posterShape: 'regular',
-      background: ufcBackground,
+        type: 'movie',
 
-      description:
-        'UFC fight stored in AllDebrid: ' +
-        title,
+        name: title,
 
-      releaseInfo:
-        extractYear(item.name) || undefined,
+        poster: UFC_LOGO,
 
-      genres: [
-        'UFC',
-        'MMA',
-        'Fighting',
-        'Sports'
-      ]
-    };
-  });
+        posterShape: 'regular',
+
+        background: UFC_BACKGROUND,
+
+        description:
+          'UFC fight stored in AllDebrid: ' +
+          title,
+
+        releaseInfo:
+          extractYear(item.name) ||
+          undefined,
+
+        genres: [
+          'UFC',
+          'MMA',
+          'Fighting',
+          'Sports'
+        ]
+      };
+    });
 
   return res.json({
     metas: metas
   });
 }
 
-
 async function handleMeta(
   res,
   id
 ) {
-  const parsed = parseFileId(id);
+  const parsed =
+    parseFileId(id);
 
   if (!parsed) {
     return res.status(400).json({
-      error: 'Invalid AllDebrid file ID'
+      error:
+        'Invalid AllDebrid file ID'
     });
   }
 
-  const file = await findFile(
-    parsed.magnetId,
-    parsed.filePath
-  );
+  const file =
+    await findFile(
+      parsed.magnetId,
+      parsed.filePath
+    );
 
   if (!file) {
     return res.status(404).json({
-      error: 'File not found in AllDebrid'
+      error:
+        'File not found in AllDebrid'
     });
   }
 
-  const title = cleanTitle(file.name);
+  const title =
+    cleanTitle(file.name);
 
   return res.json({
     meta: {
       id: id,
+
       type: 'movie',
+
       name: title,
 
-      poster: ufcLogo,
+      poster: UFC_LOGO,
+
       posterShape: 'regular',
-      background: ufcBackground,
 
       description:
         'UFC fight stored in your AllDebrid cloud: ' +
         title,
+
+      background: UFC_BACKGROUND,
 
       genres: [
         'UFC',
@@ -311,70 +329,64 @@ async function handleMeta(
       ],
 
       runtime: '180 min',
-      year: extractYear(file.name) || undefined
+
+      year:
+        extractYear(file.name) ||
+        undefined
     }
   });
 }
-
 
 async function handleStream(
   res,
   id
 ) {
-  const parsed = parseFileId(id);
+  const parsed =
+    parseFileId(id);
 
   if (!parsed) {
     return res.status(400).json({
       streams: [],
-      error: 'Invalid AllDebrid file ID'
-    });
-  }
 
-  const file = await findFile(
-    parsed.magnetId,
-    parsed.filePath
-  );
-
-  if (!file) {
-    return res.status(404).json({
-      streams: [],
-      error: 'File not found in AllDebrid'
-    });
-  }
-
-  if (!file.link) {
-    return res.status(404).json({
-      streams: [],
       error:
-        'AllDebrid returned the file but no download link was found'
+        'Invalid AllDebrid file ID'
     });
   }
 
-  console.log(
-    'Using AllDebrid file link directly:',
-    file.name
-  );
+  const file =
+    await findFile(
+      parsed.magnetId,
+      parsed.filePath
+    );
 
-  console.log(
-    'AllDebrid link:',
-    file.link
-  );
+  if (!file || !file.link) {
+    return res.status(404).json({
+      streams: [],
+
+      error:
+        'AllDebrid download link not found'
+    });
+  }
 
   return res.json({
     streams: [
       {
         id: id,
 
-        title: cleanTitle(file.name),
+        title:
+          cleanTitle(file.name),
 
-        name: 'AllDebrid',
+        name:
+          'AllDebrid',
 
         description:
-          'Streamed directly using the link returned by AllDebrid',
+          'Streamed from your AllDebrid cloud',
 
-        thumbnail: ufcLogo,
+        thumbnail:
+          UFC_LOGO,
 
-        url: file.link,
+        url:
+          file.link,
 
         behaviorHints: {
           notWebReady: false,
@@ -387,208 +399,6 @@ async function handleStream(
     ]
   });
 }
-
-
-/*
- * Diagnostic endpoint.
- *
- * This tests the AllDebrid API connection.
- *
- * The API key itself is NEVER returned.
- */
-async function handleTestAllDebrid(res) {
-  try {
-    if (!ALLDEBRID_API_KEY) {
-      return res.status(200).json({
-        success: false,
-        apiKey: 'NOT SET',
-        error:
-          'ALLDEBRID_API_KEY is not configured in Vercel.'
-      });
-    }
-
-    const body =
-      new URLSearchParams();
-
-    body.append(
-      'status',
-      'ready'
-    );
-
-    const response =
-      await fetch(
-        ALLDEBRID_STATUS_URL,
-        {
-          method: 'POST',
-
-          headers: {
-            Authorization:
-              'Bearer ' +
-              ALLDEBRID_API_KEY,
-
-            'Content-Type':
-              'application/x-www-form-urlencoded',
-
-            Accept:
-              'application/json'
-          },
-
-          body:
-            body.toString()
-        }
-      );
-
-    const responseText =
-      await response.text();
-
-    let json = null;
-
-    try {
-      json =
-        JSON.parse(
-          responseText
-        );
-    } catch (_) {
-      json = null;
-    }
-
-    return res.status(200).json({
-      success:
-        response.ok &&
-        json !== null &&
-        json.status === 'success',
-
-      apiKey: 'SET',
-
-      httpStatus:
-        response.status,
-
-      responseIsJson:
-        json !== null,
-
-      responseBody:
-        json !== null
-          ? json
-          : responseText.substring(
-              0,
-              2000
-            )
-    });
-
-  } catch (error) {
-    console.error(
-      'AllDebrid diagnostic error:',
-      error
-    );
-
-    return res.status(200).json({
-      success: false,
-
-      apiKey: 'SET',
-
-      error:
-        error.message
-    });
-  }
-}
-
-
-async function handleTestAllDebridFiles(res) {
-  try {
-    requireAllDebridKey();
-
-    const magnets =
-      await getReadyMagnets();
-
-    if (!magnets.length) {
-      return res.status(404).json({
-        success: false,
-        error:
-          'No ready AllDebrid magnets were found.'
-      });
-    }
-
-    const files =
-      await getUfcFiles();
-
-    if (!files.length) {
-      return res.status(404).json({
-        success: false,
-        error:
-          'Ready magnets were found, but no UFC video files were found.'
-      });
-    }
-
-    const file = files[0];
-
-    return res.json({
-      success: true,
-
-      filename:
-        file.name,
-
-      magnetId:
-        file.magnetId,
-
-      path:
-        file.path,
-
-      size:
-        file.size,
-
-      link:
-        file.link,
-
-      linkType:
-        file.link
-          ? getLinkType(file.link)
-          : 'NONE'
-    });
-
-  } catch (error) {
-    console.error(
-      'AllDebrid file test error:',
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      error:
-        error.message
-    });
-  }
-}
-
-
-function getLinkType(link) {
-  const value =
-    String(link).toLowerCase();
-
-  if (
-    value.includes('/dl/')
-  ) {
-    return 'DIRECT_DEBRID_DOWNLOAD';
-  }
-
-  if (
-    value.includes(
-      'alldebrid.com/f/'
-    )
-  ) {
-    return 'ALLDEBRID_FILE_PAGE';
-  }
-
-  if (
-    value.includes(
-      'alldebrid.com'
-    )
-  ) {
-    return 'ALLDEBRID_URL';
-  }
-
-  return 'OTHER';
-}
-
 
 async function getUfcFiles() {
   requireAllDebridKey();
@@ -618,18 +428,20 @@ async function getUfcFiles() {
         ALLDEBRID_FILES_URL,
         {
           id:
-            batch.map(function(m) {
-              return m.id;
-            })
+            batch.map(
+              function (magnet) {
+                return magnet.id;
+              }
+            )
         }
       );
 
     const returnedMagnets =
-      normaliseArray(
-        data &&
-        data.data &&
-        data.data.magnets
-      );
+      data &&
+      data.data &&
+      Array.isArray(data.data.magnets)
+        ? data.data.magnets
+        : [];
 
     for (
       const magnet
@@ -637,9 +449,11 @@ async function getUfcFiles() {
     ) {
       const sourceMagnet =
         magnets.find(
-          function(m) {
-            return String(m.id) ===
-              String(magnet.id);
+          function (item) {
+            return (
+              String(item.id) ===
+              String(magnet.id)
+            );
           }
         );
 
@@ -657,19 +471,15 @@ async function getUfcFiles() {
           continue;
         }
 
-        if (
-          !UFC_TERMS.test(
-            file.name
-          )
-        ) {
+        if (!UFC_TERMS.test(file.name)) {
           continue;
         }
 
-        if (
-          !VIDEO_EXTENSIONS.test(
-            file.name
-          )
-        ) {
+        if (!VIDEO_EXTENSIONS.test(file.name)) {
+          continue;
+        }
+
+        if (!file.link) {
           continue;
         }
 
@@ -689,9 +499,6 @@ async function getUfcFiles() {
           link:
             file.link,
 
-          size:
-            file.size,
-
           magnetId:
             magnet.id,
 
@@ -706,19 +513,16 @@ async function getUfcFiles() {
   }
 
   results.sort(
-    function(a, b) {
-      return Number(
-        b.completionDate
-      ) -
-      Number(
-        a.completionDate
+    function (a, b) {
+      return (
+        Number(b.completionDate) -
+        Number(a.completionDate)
       );
     }
   );
 
   return results;
 }
-
 
 async function getReadyMagnets() {
   const data =
@@ -730,23 +534,22 @@ async function getReadyMagnets() {
     );
 
   const magnets =
-    normaliseArray(
-      data &&
-      data.data &&
-      data.data.magnets
-    );
+    data &&
+    data.data &&
+    Array.isArray(data.data.magnets)
+      ? data.data.magnets
+      : [];
 
   return magnets.filter(
-    function(m) {
+    function (magnet) {
       return (
-        m &&
-        m.id &&
-        Number(m.statusCode) === 4
+        magnet &&
+        magnet.id &&
+        Number(magnet.statusCode) === 4
       );
     }
   );
 }
-
 
 async function findFile(
   magnetId,
@@ -765,17 +568,19 @@ async function findFile(
     );
 
   const magnets =
-    normaliseArray(
-      data &&
-      data.data &&
-      data.data.magnets
-    );
+    data &&
+    data.data &&
+    Array.isArray(data.data.magnets)
+      ? data.data.magnets
+      : [];
 
   const magnet =
     magnets.find(
-      function(m) {
-        return String(m.id) ===
-          String(magnetId);
+      function (item) {
+        return (
+          String(item.id) ===
+          String(magnetId)
+        );
       }
     );
 
@@ -789,32 +594,17 @@ async function findFile(
       ''
     );
 
-  return files.find(
-    function(file) {
-      return file.path ===
-        wantedPath;
-    }
-  ) || null;
+  return (
+    files.find(
+      function (file) {
+        return (
+          file.path ===
+          wantedPath
+        );
+      }
+    ) || null
+  );
 }
-
-
-function normaliseArray(
-  value
-) {
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  if (
-    value &&
-    typeof value === 'object'
-  ) {
-    return Object.values(value);
-  }
-
-  return [];
-}
-
 
 function flattenFiles(
   entries,
@@ -837,14 +627,17 @@ function flattenFiles(
 
     const currentPath =
       parentPath
-        ? parentPath + '/' + entry.n
+        ? parentPath +
+          '/' +
+          entry.n
         : entry.n;
 
     if (
       Array.isArray(entry.e)
     ) {
-      output.push(
-        ...flattenFiles(
+      output.push.apply(
+        output,
+        flattenFiles(
           entry.e,
           currentPath
         )
@@ -873,20 +666,30 @@ function flattenFiles(
   return output;
 }
 
-
 async function allDebridRequest(
   url,
   fields
 ) {
+  requireAllDebridKey();
+
   const body =
     new URLSearchParams();
 
-  for (
-    const [key, value]
-    of Object.entries(
+  const entries =
+    Object.entries(
       fields || {}
-    )
+    );
+
+  for (
+    const pair
+    of entries
   ) {
+    const key =
+      pair[0];
+
+    const value =
+      pair[1];
+
     if (
       Array.isArray(value)
     ) {
@@ -914,7 +717,8 @@ async function allDebridRequest(
     await fetch(
       url,
       {
-        method: 'POST',
+        method:
+          'POST',
 
         headers: {
           Authorization:
@@ -925,10 +729,7 @@ async function allDebridRequest(
             'application/x-www-form-urlencoded',
 
           Accept:
-            'application/json',
-
-          'User-Agent':
-            'Navs-UFC-AllDebrid-Stremio/2.3'
+            'application/json'
         },
 
         body:
@@ -939,7 +740,8 @@ async function allDebridRequest(
   const responseText =
     await response.text();
 
-  let data;
+  let data =
+    null;
 
   try {
     data =
@@ -950,11 +752,7 @@ async function allDebridRequest(
     throw new Error(
       'AllDebrid returned a non-JSON response (' +
       response.status +
-      '). Body: ' +
-      responseText.substring(
-        0,
-        500
-      )
+      ')'
     );
   }
 
@@ -962,31 +760,140 @@ async function allDebridRequest(
     !response.ok ||
     data.status !== 'success'
   ) {
-    let message;
-
-    if (
+    const apiMessage =
       data &&
       data.error &&
       data.error.message
-    ) {
-      message =
-        data.error.message;
-    } else {
-      message =
-        'AllDebrid API returned HTTP ' +
-        response.status;
-    }
+        ? data.error.message
+        : null;
 
     throw new Error(
-      message
+      apiMessage ||
+      'AllDebrid API returned HTTP ' +
+      response.status
     );
   }
 
   return data;
 }
 
+async function handleTestAllDebrid(
+  res
+) {
+  try {
+    requireAllDebridKey();
 
-function handleDebugEnv(res) {
+    const data =
+      await allDebridRequest(
+        ALLDEBRID_STATUS_URL,
+        {
+          status: 'ready'
+        }
+      );
+
+    const magnets =
+      data &&
+      data.data &&
+      Array.isArray(data.data.magnets)
+        ? data.data.magnets
+        : [];
+
+    return res.status(200).json({
+      success:
+        true,
+
+      apiKey:
+        'SET',
+
+      readyMagnets:
+        magnets.length,
+
+      message:
+        'AllDebrid connection is working.'
+    });
+
+  } catch (error) {
+    return res.status(200).json({
+      success:
+        false,
+
+      apiKey:
+        ALLDEBRID_API_KEY
+          ? 'SET'
+          : 'NOT SET',
+
+      error:
+        error.message
+    });
+  }
+}
+
+async function handleTestAllDebridFiles(
+  res
+) {
+  try {
+    requireAllDebridKey();
+
+    const files =
+      await getUfcFiles();
+
+    return res.status(200).json({
+      success:
+        true,
+
+      ufcFilesFound:
+        files.length,
+
+      files:
+        files
+          .slice(0, 10)
+          .map(
+            function (file) {
+              return {
+                name:
+                  file.name,
+
+                magnetId:
+                  file.magnetId,
+
+                path:
+                  file.path,
+
+                size:
+                  file.size ||
+                  null,
+
+                link:
+                  file.link,
+
+                linkType:
+                  file.link
+                    ? 'direct'
+                    : 'missing'
+              };
+            }
+          )
+    });
+
+  } catch (error) {
+    return res.status(200).json({
+      success:
+        false,
+
+      apiKey:
+        ALLDEBRID_API_KEY
+          ? 'SET'
+          : 'NOT SET',
+
+      error:
+        error.message
+    });
+  }
+}
+
+function handleDebugEnv(
+  res
+) {
   return res.json({
     ALLDEBRID_API_KEY:
       ALLDEBRID_API_KEY
@@ -1007,15 +914,15 @@ function handleDebugEnv(res) {
   });
 }
 
-
 function requireAllDebridKey() {
-  if (!ALLDEBRID_API_KEY) {
+  if (
+    !ALLDEBRID_API_KEY
+  ) {
     throw new Error(
       'ALLDEBRID_API_KEY is not configured in Vercel.'
     );
   }
 }
-
 
 function makeFileId(
   magnetId,
@@ -1030,7 +937,6 @@ function makeFileId(
     )
   );
 }
-
 
 function parseFileId(
   id
@@ -1059,15 +965,13 @@ function parseFileId(
   }
 }
 
-
 function base64UrlEncode(
   value
 ) {
-  return Buffer
-    .from(
-      value,
-      'utf8'
-    )
+  return Buffer.from(
+    value,
+    'utf8'
+  )
     .toString('base64')
     .replace(
       /\+/g,
@@ -1083,10 +987,17 @@ function base64UrlEncode(
     );
 }
 
-
 function base64UrlDecode(
   value
 ) {
+  const padding =
+    (4 -
+      (
+        value.length %
+        4
+      )) %
+    4;
+
   const padded =
     value
       .replace(
@@ -1098,39 +1009,25 @@ function base64UrlDecode(
         '/'
       ) +
     '='.repeat(
-      (
-        4 -
-        (
-          value.length % 4
-        )
-      ) % 4
+      padding
     );
 
-  return Buffer
-    .from(
-      padded,
-      'base64'
-    )
-    .toString(
-      'utf8'
-    );
+  return Buffer.from(
+    padded,
+    'base64'
+  ).toString('utf8');
 }
 
-
 function cleanTitle(
-  name
+  filename
 ) {
-  if (!name) {
-    return 'UFC Fight';
-  }
-
-  return String(name)
+  return filename
     .replace(
-      /\.[^.]+$/,
+      VIDEO_EXTENSIONS,
       ''
     )
     .replace(
-      /[._]+/g,
+      /[_\.]+/g,
       ' '
     )
     .replace(
@@ -1140,21 +1037,15 @@ function cleanTitle(
     .trim();
 }
 
-
 function extractYear(
-  name
+  value
 ) {
-  if (!name) {
-    return null;
-  }
-
   const match =
-    String(name).match(
+    String(value).match(
       /\b(19|20)\d{2}\b/
     );
 
   return match
-    ? Number(match[0])
+    ? match[0]
     : null;
 }
-```
