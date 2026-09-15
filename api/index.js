@@ -819,6 +819,50 @@ if (path === '/test-alldebrid-page') {
     }
   }
 
+if (path === '/test-alldebrid-webdav') {
+  try {
+    const apiKey = process.env.ALLDEBRID_API_KEY;
+
+    if (!apiKey) {
+      return sendJson(res, 500, {
+        success: false,
+        error: 'ALLDEBRID_API_KEY is not set'
+      });
+    }
+
+    const auth = Buffer
+      .from(`${apiKey}:eeeeee`)
+      .toString('base64');
+
+    const response = await fetch(
+      'https://webdav.debrid.it/',
+      {
+        method: 'PROPFIND',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Depth': '1'
+        }
+      }
+    );
+
+    const text = await response.text();
+
+    return sendJson(res, 200, {
+      success: response.ok || response.status === 207,
+      httpStatus: response.status,
+      contentType: response.headers.get('content-type'),
+      responseLength: text.length,
+      preview: text.substring(0, 1000)
+    });
+
+  } catch (error) {
+    return sendJson(res, 500, {
+      success: false,
+      error: error.message
+    });
+  }
+}
+  
   return sendJson(res, 404, {
     error:
       'Endpoint not found',
