@@ -1,4 +1,3 @@
-```javascript
 const { ALLDEBRID_API_KEY, TMDB_API_KEY } = process.env;
 
 const ALLDEBRID_STATUS_URL = 'https://api.alldebrid.com/v4.1/magnet/status';
