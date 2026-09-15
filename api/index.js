@@ -401,99 +401,89 @@ async function handleStream(
  *
  * The API key itself is NEVER returned.
  */
+```javascript
 async function handleTestAllDebrid(res) {
   try {
     if (!ALLDEBRID_API_KEY) {
-      return res.status(500).json({
+      return res.status(200).json({
         success: false,
         apiKey: 'NOT SET',
-        error:
-          'ALLDEBRID_API_KEY is not configured in Vercel.'
+        error: 'ALLDEBRID_API_KEY is not configured in Vercel.'
       });
     }
 
-    const body =
-      new URLSearchParams();
+    const body = new URLSearchParams();
+    body.append('status', 'ready');
 
-    body.append(
-      'status',
-      'ready'
-    );
+    let response;
 
-    const response =
-      await fetch(
+    try {
+      response = await fetch(
         ALLDEBRID_STATUS_URL,
         {
           method: 'POST',
-
           headers: {
             Authorization:
-              'Bearer ' +
-              ALLDEBRID_API_KEY,
+              'Bearer ' + ALLDEBRID_API_KEY,
 
             'Content-Type':
               'application/x-www-form-urlencoded',
 
             Accept:
-              'application/json',
-
-            'User-Agent':
-              'Navs-UFC-AllDebrid-Stremio/2.3'
+              'application/json'
           },
-
-          body:
-            body.toString()
+          body: body.toString()
         }
       );
+    } catch (fetchError) {
+      return res.status(200).json({
+        success: false,
+        apiKey: 'SET',
+        stage: 'FETCH',
+        error: fetchError.message
+      });
+    }
 
-    const contentType =
-      response.headers.get(
-        'content-type'
-      ) || '';
-
-    const responseText =
-      await response.text();
-
-    let parsedJson = null;
+    let responseText = '';
 
     try {
-      parsedJson =
-        JSON.parse(responseText);
+      responseText = await response.text();
+    } catch (textError) {
+      return res.status(200).json({
+        success: false,
+        apiKey: 'SET',
+        stage: 'READ_RESPONSE',
+        httpStatus: response.status,
+        error: textError.message
+      });
+    }
+
+    let json = null;
+
+    try {
+      json = JSON.parse(responseText);
     } catch (_) {
-      parsedJson = null;
+      json = null;
     }
 
     return res.status(200).json({
       success:
         response.ok &&
-        parsedJson &&
-        parsedJson.status === 'success',
+        json !== null &&
+        json.status === 'success',
 
       apiKey: 'SET',
 
-      alldebridHttpStatus:
+      httpStatus:
         response.status,
 
-      alldebridStatusText:
-        response.statusText,
-
-      contentType:
-        contentType,
-
       responseIsJson:
-        parsedJson !== null,
+        json !== null,
 
-      alldebridResponse:
-        parsedJson !== null
-          ? parsedJson
-          : responseText.substring(0, 2000),
-
-      diagnosis:
-        diagnoseAllDebridResponse(
-          response.status,
-          parsedJson,
-          responseText
-        )
+      responseBody:
+        json !== null
+          ? json
+          : responseText.substring(0, 2000)
     });
 
   } catch (error) {
@@ -502,18 +492,15 @@ async function handleTestAllDebrid(res) {
       error
     );
 
-    return res.status(500).json({
+    return res.status(200).json({
       success: false,
-
       apiKey: 'SET',
-
-      error:
-        error.message
+      stage: 'DIAGNOSTIC',
+      error: error.message
     });
   }
 }
-
-
+```
 function diagnoseAllDebridResponse(
   httpStatus,
   json,
