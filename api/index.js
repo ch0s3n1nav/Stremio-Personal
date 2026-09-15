@@ -835,27 +835,29 @@ if (path === '/test-alldebrid-webdav') {
       .toString('base64');
 
     const filePath =
-      '/magnets/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4/';
+      '/magnets/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4/UFC.Fight.Night.287.Hooker.vs.Parnasse.Prelims.1080p.WEB-DL.H264.Fight-BB.mp4';
 
     const response = await fetch(
       `https://webdav.debrid.it${filePath}`,
       {
-        method: 'PROPFIND',
+        method: 'GET',
         headers: {
           'Authorization': `Basic ${auth}`,
-          'Depth': '1'
+          'Range': 'bytes=0-1023'
         }
       }
     );
 
-    const text = await response.text();
+    const buffer = await response.arrayBuffer();
 
     return sendJson(res, 200, {
-      success: response.ok || response.status === 207,
+      success: response.ok || response.status === 206,
       httpStatus: response.status,
       contentType: response.headers.get('content-type'),
-      responseLength: text.length,
-      webdav: text
+      contentLength: response.headers.get('content-length'),
+      contentRange: response.headers.get('content-range'),
+      acceptRanges: response.headers.get('accept-ranges'),
+      bytesReceived: buffer.byteLength
     });
 
   } catch (error) {
