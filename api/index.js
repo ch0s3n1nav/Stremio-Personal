@@ -25,6 +25,7 @@ module.exports = async function handler(req, res) {
     if (path === '/debug-env') return debugEnv(res);
     if (path === '/test-alldebrid') return testAllDebrid(res);
     if (path === '/debug-alldebrid-files') return debugAllDebridFiles(res);
+    if (path === '/debug-alldebrid-connection') return debugAllDebridConnection(res);
     if (path === '/test-alldebrid-files') return testAllDebridFiles(res);
 
     const catalog = path.match(/^\/catalog\/movie\/([^/]+)\.json$/);
@@ -62,6 +63,7 @@ function root(res) {
       debug: '/debug-env',
       testAllDebrid: '/test-alldebrid',
       debugAllDebridFiles: '/debug-alldebrid-files',
+      debugAllDebridConnection: '/debug-alldebrid-connection',
       testAllDebridFiles: '/test-alldebrid-files'
     }
   });
@@ -127,6 +129,78 @@ async function testAllDebrid(res) {
       error: error.message
     });
   }
+}
+
+async function debugAllDebridConnection(res) {
+  const result = {
+    success: true,
+    apiKey: ALLDEBRID_API_KEY ? 'SET' : 'NOT SET',
+    timestamp: new Date().toISOString(),
+    tests: {}
+  };
+
+  try {
+    const pingUrl = 'https://api.alldebrid.com/v4/ping';
+    const pingResponse = await fetch(pingUrl, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Navs-UFC-AllDebrid/3.1'
+      }
+    });
+    const pingText = await pingResponse.text();
+    result.tests.unauthenticatedPing = {
+      url: pingUrl,
+      method: 'GET',
+      status: pingResponse.status,
+      ok: pingResponse.ok,
+      contentType: pingResponse.headers.get('content-type'),
+      server: pingResponse.headers.get('server'),
+      cfRay: pingResponse.headers.get('cf-ray'),
+      cfCacheStatus: pingResponse.headers.get('cf-cache-status'),
+      responseStart: pingText.slice(0, 300)
+    };
+  } catch (error) {
+    result.tests.unauthenticatedPing = { error: error.message };
+  }
+
+  try {
+    requireKey();
+    const statusResponse = await fetch(STATUS_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + ALLDEBRID_API_KEY,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+        'User-Agent': 'Navs-UFC-AllDebrid/3.1'
+      },
+      body: 'status=ready'
+    });
+    const statusText = await statusResponse.text();
+    let parsed = null;
+    try { parsed = JSON.parse(statusText); } catch (_) {}
+
+    result.tests.authenticatedStatus = {
+      url: STATUS_URL,
+      method: 'POST',
+      status: statusResponse.status,
+      ok: statusResponse.ok,
+      contentType: statusResponse.headers.get('content-type'),
+      server: statusResponse.headers.get('server'),
+      cfRay: statusResponse.headers.get('cf-ray'),
+      cfCacheStatus: statusResponse.headers.get('cf-cache-status'),
+      responseJsonStatus: parsed && parsed.status ? parsed.status : null,
+      responseError: parsed && parsed.error ? {
+        code: parsed.error.code || null,
+        message: parsed.error.message || null
+      } : null,
+      responseStart: statusText.slice(0, 300)
+    };
+  } catch (error) {
+    result.tests.authenticatedStatus = { error: error.message };
+  }
+
+  return res.status(200).json(result);
 }
 
 async function debugAllDebridFiles(res) {
