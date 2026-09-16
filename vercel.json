@@ -1,39 +1,13 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "api/manifest.json",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/configure.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/debug-env.js",
-      "use": "@vercel/node"
-    }
+    { "src": "api/manifest.json", "use": "@vercel/static" },
+    { "src": "api/index.js", "use": "@vercel/node" },
+    { "src": "api/configure.js", "use": "@vercel/node" }
   ],
   "routes": [
-    {
-      "src": "/manifest.json",
-      "dest": "/api/manifest.json"
-    },
-    {
-      "src": "/configure",
-      "dest": "/api/configure.js"
-    },
-    {
-      "src": "/debug-env",
-      "dest": "/api/debug-env.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/index.js"
-    }
+    { "src": "/manifest.json", "dest": "/api/manifest.json" },
+    { "src": "/configure", "dest": "/api/configure.js" },
+    { "src": "/(.*)", "dest": "/api/index.js" }
   ]
 }
