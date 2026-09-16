@@ -1,6 +1,6 @@
 {
   "id": "com.stremio.navsufcalldebrid",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "name": "Nav's UFC AllDebrid",
   "description": "Shows UFC fights stored in your AllDebrid cloud and streams them directly in Stremio.",
   "logo": "https://i.ibb.co/ds3h2ZSS/UFC-LOGO.png",
